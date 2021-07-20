@@ -7,7 +7,7 @@ Para una empresa de retail es muy importante tener presente las preferencias e i
 Se define entonces que el problema a tratar es la reposición óptima de productos en tiendas con el objetivo de generar un mayor beneficio económico para la empresa de retail. Con esto en mente, se puede escribir de forma cualitativa un problema de optimización.
 
 
-![F=\sum_{i,j,k}\textup{Beneficio}](https://latex.codecogs.com/svg.latex?\Large&space;F=\sum_{i,j,k}\textup{Beneficio})
+![F=\sum_{i,j,k}\textup{Beneficio}](https://latex.codecogs.com/svg.latex?\large&space;F=\sum_{i,j,k}\textup{Beneficio})
 
 ## Implementación de solución exacta mediante PULP
 
