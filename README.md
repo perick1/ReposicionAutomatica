@@ -22,4 +22,10 @@ se utiliza coin BB
 
 ## Implementación de PSO via pyswarm
 
-bla
+En primera instancia se busca busca aplicar un modelo funcional, via pyswarm, que entrege la misma solución exacta entregada por PuLP, para posteriormente mejorar el modelo y obtener tiempos de ejecución menores.
+
+Luego se mejorará en el enfoque de la implementación para mejorar el performance (esto contempla hacer cambios en la función objetivo, formad de implementar las restricciónes ,condiciones iniciales, y bordes del problema y de las variables).
+
+## Curvas de beneficio y restricciones.
+
+En `/utils` se encuentran todas las funciones que serán utilizadas para realizar el proyecto. En particular en `/_curves.py` están las funciones generadoras de curvas de veneficio por producto y curvas de restricciones de stock.
