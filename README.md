@@ -9,6 +9,10 @@ Se define entonces que el problema a tratar es la reposición óptima de product
 
 ![F=\sum_{i,j,k}\textup{Beneficio}](https://latex.codecogs.com/svg.latex?\large&space;F=\sum_{i,j,k}\textup{Beneficio})
 
+Con restricciones:
+
+![\textup{s.a.}& \ \ \ \textup{Restricciones de Stock}](https://latex.codecogs.com/svg.latex?\large&space;\textup{s.a.}& \ \ \ \textup{Restricciones de Stock}})
+
 ## Implementación de solución exacta mediante PULP
 
 se utiliza coin BB
