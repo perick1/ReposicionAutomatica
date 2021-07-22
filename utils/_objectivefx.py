@@ -94,3 +94,6 @@ def Beneficio2(x ,A ,B ,S ,shape ,factor = 10**(10) ,penalty = 'constant'):
 
     score = penalty1 + penalty2 - revenue
     return score
+
+def beneficio03():
+    pass

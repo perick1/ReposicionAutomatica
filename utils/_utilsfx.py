@@ -13,3 +13,6 @@ def Combinations(n,m,l):
             for k in range(l):
                 L.append((i,j,k))
     return L
+
+def getBounds():
+    pass
