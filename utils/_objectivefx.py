@@ -95,5 +95,30 @@ def Beneficio2(x ,A ,B ,S ,shape ,factor = 10**(10) ,penalty = 'constant'):
     score = penalty1 + penalty2 - revenue
     return score
 
-def beneficio03():
-    pass
+def beneficio03(X ,R ,S ,params_tiendas ,Npart ,Nsku ,Nt ,Ns):
+    #penaltys
+    penalty1 = 0
+    penalty2 = 0
+    facor = 10**10
+
+    #computo beneficio
+    X = X.reshape((Npart,Nsku*Nt,Ns))
+    revenue = np.sum(np.multiply(X,R))
+
+    #penalty por no cumplir requisitos en tienda
+    repo_sem_tienda = np.zeros((Npart,Nsku,Ns))
+    repo_sem_sku = np.zeros((Npart,Nsku,Ns))
+    for j in range(Nt):
+        repo_sem_sku = repo_sem_sku + repo_sem_tienda
+        repo_sem_tienda = X[:,j*Nsku:(j+1)*Nsku,:]
+
+        penalty2 += np.sum(((np.max(repo_sem_tienda,axis=1)/np.sum(repo_sem_tienda,axis=1))>params_tiendas['IC'+str(j)+'0'])*1.0)
+
+    repo_acumulada = np.zeros_like(repo_sem_sku)
+    for k in range(Ns):
+        fault = np.sum(repo_sem_sku[:,:,:k],axis=2) > np.sum(S[:,:k],axis=1)
+        if fault:
+            penalty1 += 1
+
+    score = (penalty1 + penalty2) * factor - revenue
+    return score

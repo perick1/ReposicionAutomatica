@@ -16,3 +16,6 @@ def Combinations(n,m,l):
 
 def getBounds():
     pass
+
+def getInitialConditions():
+    pass
