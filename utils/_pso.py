@@ -22,8 +22,8 @@ curvas_BT   = {'R11':('escalon',30,15,3) ,'R12':('rampla',50,-10,3) ,'R13':('val
 #S01: stock total a repartir del sku 1
 curvas_ST   = {'S01':('escalon',1000,0,1) ,'S02':('rampla',0,1000,1) ,'S03':('valle',3000,3000,3000)}
 
-plot_curvas(curvas_BT ,'dinero')      #curvas de beneficio (revenue)
-plot_curvas(curvas_ST ,'stock')      #curvas de stock a repartir
+plot_curvas(curvas_BT ,'dinero' ,Nsku ,Ntiendas)      #curvas de beneficio (revenue)
+plot_curvas(curvas_ST ,'stock' ,Nsku)      #curvas de stock a repartir
 
 #SC10: stock constrain (restriccion de stock total), distribucion a tiendas, fraccion del total de stock que va a la tienda 1
 #IC10: (Inside constrain) restriccion dentro de la tienda 1, da maximo de la fraccion de la tienda que se puede albergar 1 solo sku

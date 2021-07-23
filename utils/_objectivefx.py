@@ -1,5 +1,6 @@
 # Import modules
 import numpy as np
+import pandas as pd
 
 def Beneficio1(x ,A ,B ,S ,shape ,factor = 10**(10) ,penalty = 'constant'):
     '''
@@ -97,28 +98,39 @@ def Beneficio2(x ,A ,B ,S ,shape ,factor = 10**(10) ,penalty = 'constant'):
 
 def beneficio03(X ,R ,S ,params_tiendas ,Npart ,Nsku ,Nt ,Ns):
     #penaltys
-    penalty1 = 0
-    penalty2 = 0
-    facor = 10**10
+    penalty1= np.zeros(Npart)
+    penalty2= np.zeros(Npart)
+    revenue = np.zeros(Npart)
+    factor  = 10**4
 
-    #computo beneficio
-    X = X.reshape((Npart,Nsku*Nt,Ns))
-    revenue = np.sum(np.multiply(X,R))
+    col = ['semana 1','semana 2','semana 3','semana 4','semana 5','semana 6']
+    Rdf = pd.DataFrame(R,columns = col)
+    Rdf = pd.DataFrame(R,columns = col)
+    Rdf['tienda'] = np.repeat(np.arange(1 ,Npart+1),Nsku)
+    Rdf['sku'] = np.resize(np.arange(1,Nsku+1),Nt*Nsku)
+    Sdf = pd.DataFrame(S,columns = col)
+    Sdf['sku'] = np.arange(1,Nsku+1)
 
-    #penalty por no cumplir requisitos en tienda
-    repo_sem_tienda = np.zeros((Npart,Nsku,Ns))
-    repo_sem_sku = np.zeros((Npart,Nsku,Ns))
-    for j in range(Nt):
-        repo_sem_sku = repo_sem_sku + repo_sem_tienda
-        repo_sem_tienda = X[:,j*Nsku:(j+1)*Nsku,:]
+    for p in range(Npart):
+        #crear pansas de X (3 columnas de indices, particulas y tiendas y sku) R (tiendas y sku) S(solo sku)
 
-        penalty2 += np.sum(((np.max(repo_sem_tienda,axis=1)/np.sum(repo_sem_tienda,axis=1))>params_tiendas['IC'+str(j)+'0'])*1.0)
+        Xdf = pd.DataFrame(X[p].reshape((Nt*Nsku,Ns)),columns = col)
+        Xdf['tienda'] =np.repeat(np.arange(1 ,Npart+1),Nsku)
+        Xdf['sku'] = np.resize(np.arange(1,Nsku+1),Nt*Nsku)
+        #computo beneficio
+        revenue[p] = np.sum( Xdf.values * Rdf.values )
 
-    repo_acumulada = np.zeros_like(repo_sem_sku)
-    for k in range(Ns):
-        fault = np.sum(repo_sem_sku[:,:,:k],axis=2) > np.sum(S[:,:k],axis=1)
-        if fault:
-            penalty1 += 1
+        #computo penalizacion 1
+        for i in range(1,Nsku+1):
+            cantidad_de_venta = np.sum(Xdf.loc[Xdf['sku']==i].values ,axis = 0)[:-2]
+            stock_acumulado = np.cumsum(Sdf.loc[Sdf['sku']==i].values)[:-1]
+            penalty1[p] = penalty1[p] + np.sum((cantidad_de_venta > stock_acumulado) * factor)
 
-    score = (penalty1 + penalty2) * factor - revenue
+        #computo penalizacion 2
+        for j in range(1,Nt+1):
+            max_repo = params_tiendas[f'IC{j}0']
+            maxrepo_en_tienda = np.max(Xdf.loc[Xdf['tienda']==j].values,axis = 0)[:-2]
+            penalty2[p] = penalty2[p] + np.sum((maxrepo_en_tienda > max_repo) * factor)
+
+    score = penalty1 + penalty2 - revenue
     return score
