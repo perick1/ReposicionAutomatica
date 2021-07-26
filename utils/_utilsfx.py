@@ -14,8 +14,14 @@ def Combinations(n,m,l):
                 L.append((i,j,k))
     return L
 
-def getBounds():
-    pass
+def getBounds(S,Nsku,Nt,Ns):
+    s_max = np.resize(np.sum(S,axis = 1),Nsku*Nt)
+    s_max = np.tile(s_max.reshape((Nsku*Nt,1)),(1,Ns))
+
+    max_bound = s_max.reshape(Nsku*Nt*Ns)
+    min_bound = max_bound * 0.0
+    #return s_max
+    return (min_bound ,  max_bound )
 
 def getInitialConditions():
     pass

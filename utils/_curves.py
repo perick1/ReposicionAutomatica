@@ -2,9 +2,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import random as rm
+import os, sys
+
 
 def curva6(params_dict,Nsku,Nt):
-
     if Nt == 0 :
         C = np.zeros((Nsku,6))
         for i in range(Nsku):
@@ -17,10 +18,8 @@ def curva6(params_dict,Nsku,Nt):
     return C
 
 def getCurve(params_tuple):
-
     name ,p0 ,p1 ,p2 = params_tuple
     curve = np.zeros(6)
-
     for i in range(6):
         if name == 'escalon':
             curve[:p2] = p0

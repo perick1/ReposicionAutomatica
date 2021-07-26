@@ -3,8 +3,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random as rm
 
-def plot_curvas(params_dict ,tipo ,Nsku ,Nt=1):
+import os, sys
 
+sys.path.append(os.path.abspath('C:/Users/Erick/Documents/GitHub/ReposicionAutomatica'))
+from utils import *
+
+def plot_curvas(params_dict ,tipo ,Nsku ,Nt=1):
     fig, axs = plt.subplots(nrows = Nt , ncols = Nsku)
     t = np.arange(1,7)
 

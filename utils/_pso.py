@@ -2,6 +2,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import random as rm
+import pandas as pd
+import os, sys
+
+sys.path.append(os.path.abspath('C:/Users/Erick/Documents/GitHub/ReposicionAutomatica'))
+from utils import *
 
 # Import PySwarms
 import pyswarms as ps
@@ -30,11 +35,11 @@ plot_curvas(curvas_ST ,'stock' ,Nsku)      #curvas de stock a repartir
 #restriccion_del_total_de_stock = {'SC10': 0.6 ,'SC20': 0.4}
 restriccion_dentro_de_tienda   = {'IC10': 0.4 ,'IC20': 0.6}
 
-Niteraciones = 100
-Nparticulas  = 200
+Niteraciones = 30
+Nparticulas  = 50
 PSO_params   = {'c1': 1.0, 'c2': 1.0, 'w':0.5}
 
 #hacer pso por 6 semanas, devuelve el objeto optimizador ya optimizado
-PSO = pso6(Nsku=Nsku ,Nt=Ntiendas ,Ns=Nsemanas ,f=funcion ,R=curvas_BT ,S=curvas_ST
-          ,IC=restriccion_dentro_de_tienda ,iter=Niteraciones
-          ,Nparticles = Nparticulas ,PSO_params=PSO_params)
+PSO = pso6(Nsku=Nsku ,Nt=Ntiendas ,Ns=Nsemanas ,f=funcion ,R=curvas_BT ,S=curvas_ST,IC=restriccion_dentro_de_tienda ,iter=Niteraciones,Nparticles = Nparticulas ,PSO_params=PSO_params)
+plot_cost_history(cost_history=PSO.cost_history)
+plt.show(block=False)
