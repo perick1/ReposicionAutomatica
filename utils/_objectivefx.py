@@ -106,7 +106,7 @@ def beneficio03(X ,R ,S ,params_tiendas ,Npart ,Nsku ,Nt ,Ns):
     col = ['semana 1','semana 2','semana 3','semana 4','semana 5','semana 6']
     Rdf = pd.DataFrame(R,columns = col)
     Rdf = pd.DataFrame(R,columns = col)
-    Rdf['tienda'] = np.repeat(np.arange(1 ,Npart+1),Nsku)
+    Rdf['tienda'] = np.repeat(np.arange(1 ,Nt+1),Nsku)
     Rdf['sku'] = np.resize(np.arange(1,Nsku+1),Nt*Nsku)
     Sdf = pd.DataFrame(S,columns = col)
     Sdf['sku'] = np.arange(1,Nsku+1)
@@ -115,7 +115,7 @@ def beneficio03(X ,R ,S ,params_tiendas ,Npart ,Nsku ,Nt ,Ns):
         #crear pansas de X (3 columnas de indices, particulas y tiendas y sku) R (tiendas y sku) S(solo sku)
 
         Xdf = pd.DataFrame(X[p].reshape((Nt*Nsku,Ns)),columns = col)
-        Xdf['tienda'] =np.repeat(np.arange(1 ,Npart+1),Nsku)
+        Xdf['tienda'] =np.repeat(np.arange(1 ,Nt+1),Nsku)
         Xdf['sku'] = np.resize(np.arange(1,Nsku+1),Nt*Nsku)
         #computo beneficio
         revenue[p] = np.sum( Xdf.values * Rdf.values )

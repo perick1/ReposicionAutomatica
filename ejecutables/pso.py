@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import random as rm
 import pandas as pd
 import os, sys
-
+#from ReposicionAutomatica.utils import *
 sys.path.append(os.path.abspath('C:/Users/Erick/Documents/GitHub/ReposicionAutomatica'))
 from utils import *
 
