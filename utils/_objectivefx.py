@@ -101,10 +101,9 @@ def beneficio03(X ,R ,S ,params_tiendas ,Npart ,Nsku ,Nt ,Ns):
     penalty1= np.zeros(Npart)
     penalty2= np.zeros(Npart)
     revenue = np.zeros(Npart)
-    factor  = 10**4
+    factor  = 10**6
 
     col = ['semana 1','semana 2','semana 3','semana 4','semana 5','semana 6']
-    Rdf = pd.DataFrame(R,columns = col)
     Rdf = pd.DataFrame(R,columns = col)
     Rdf['tienda'] = np.repeat(np.arange(1 ,Nt+1),Nsku)
     Rdf['sku'] = np.resize(np.arange(1,Nsku+1),Nt*Nsku)
@@ -122,15 +121,16 @@ def beneficio03(X ,R ,S ,params_tiendas ,Npart ,Nsku ,Nt ,Ns):
 
         #computo penalizacion 1
         for i in range(1,Nsku+1):
-            cantidad_de_venta = np.sum(Xdf.loc[Xdf['sku']==i].values ,axis = 0)[:-2]
+            cantidad_de_venta = np.cumsum(np.sum(Xdf.loc[Xdf['sku']==i].values ,axis = 0)[:-2])
             stock_acumulado = np.cumsum(Sdf.loc[Sdf['sku']==i].values)[:-1]
             penalty1[p] = penalty1[p] + np.sum((cantidad_de_venta > stock_acumulado) * factor)
 
         #computo penalizacion 2
         for j in range(1,Nt+1):
             max_repo = params_tiendas[f'IC{j}0']
-            maxrepo_en_tienda = np.max(Xdf.loc[Xdf['tienda']==j].values,axis = 0)[:-2]
-            penalty2[p] = penalty2[p] + np.sum((maxrepo_en_tienda > max_repo) * factor)
+            repo_en_tienda = (Xdf.loc[Xdf['tienda']==j].values)[:,:-2]
+            maxrepo_en_tienda = np.max(repo_en_tienda,axis = 0) / np.sum(repo_en_tienda,axis = 0)
+            #penalty2[p] = penalty2[p] + np.sum((maxrepo_en_tienda > max_repo) * factor)
 
     score = penalty1 + penalty2 - revenue
     return score
