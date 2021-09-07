@@ -1,0 +1,40 @@
+2021-09-07 10:40:27,867 - gurobipy.gurobipy - INFO - Gurobi Optimizer version 9.1.2 build v9.1.2rc0 (win64)
+2021-09-07 10:40:27,868 - gurobipy.gurobipy - INFO - Thread count: 6 physical cores, 12 logical processors, using up to 12 threads
+2021-09-07 10:40:27,869 - gurobipy.gurobipy - INFO - Optimize a model with 18 rows, 36 columns and 126 nonzeros
+2021-09-07 10:40:27,869 - gurobipy.gurobipy - INFO - Model fingerprint: 0xc7bc9d58
+2021-09-07 10:40:27,870 - gurobipy.gurobipy - INFO - Coefficient statistics:
+2021-09-07 10:40:27,870 - gurobipy.gurobipy - INFO -   Matrix range     [1e+00, 1e+00]
+2021-09-07 10:40:27,871 - gurobipy.gurobipy - INFO -   Objective range  [4e+00, 5e+01]
+2021-09-07 10:40:27,871 - gurobipy.gurobipy - INFO -   Bounds range     [0e+00, 0e+00]
+2021-09-07 10:40:27,908 - gurobipy.gurobipy - INFO -   RHS range        [1e+03, 2e+04]
+2021-09-07 10:40:27,910 - gurobipy.gurobipy - INFO - Presolve removed 16 rows and 33 columns
+2021-09-07 10:40:27,911 - gurobipy.gurobipy - INFO - Presolve time: 0.04s
+2021-09-07 10:40:27,912 - gurobipy.gurobipy - INFO - Presolved: 2 rows, 3 columns, 5 nonzeros
+2021-09-07 10:40:27,912 - gurobipy.gurobipy - INFO - 
+2021-09-07 10:40:27,913 - gurobipy.gurobipy - INFO - Iteration    Objective       Primal Inf.    Dual Inf.      Time
+2021-09-07 10:40:27,913 - gurobipy.gurobipy - INFO -        0    1.1000000e+06   1.125000e+03   0.000000e+00      0s
+2021-09-07 10:40:27,914 - gurobipy.gurobipy - INFO - Extra simplex iterations after uncrush: 2
+2021-09-07 10:40:27,915 - gurobipy.gurobipy - INFO -        4    1.0910000e+06   0.000000e+00   0.000000e+00      0s
+2021-09-07 10:40:27,915 - gurobipy.gurobipy - INFO - 
+2021-09-07 10:40:27,916 - gurobipy.gurobipy - INFO - Solved in 4 iterations and 0.05 seconds
+2021-09-07 10:40:27,917 - gurobipy.gurobipy - INFO - Optimal objective  1.091000000e+06
+2021-09-07 10:53:50,591 - gurobipy.gurobipy - INFO - Gurobi Optimizer version 9.1.2 build v9.1.2rc0 (win64)
+2021-09-07 10:53:50,591 - gurobipy.gurobipy - INFO - Thread count: 6 physical cores, 12 logical processors, using up to 12 threads
+2021-09-07 10:53:50,591 - gurobipy.gurobipy - INFO - Optimize a model with 18 rows, 36 columns and 126 nonzeros
+2021-09-07 10:53:50,591 - gurobipy.gurobipy - INFO - Model fingerprint: 0xa887067d
+2021-09-07 10:53:50,607 - gurobipy.gurobipy - INFO - Coefficient statistics:
+2021-09-07 10:53:50,607 - gurobipy.gurobipy - INFO -   Matrix range     [1e+00, 1e+00]
+2021-09-07 10:53:50,607 - gurobipy.gurobipy - INFO -   Objective range  [4e+00, 5e+01]
+2021-09-07 10:53:50,607 - gurobipy.gurobipy - INFO -   Bounds range     [0e+00, 0e+00]
+2021-09-07 10:53:50,607 - gurobipy.gurobipy - INFO -   RHS range        [1e+03, 2e+04]
+2021-09-07 10:53:50,607 - gurobipy.gurobipy - INFO - Presolve removed 16 rows and 33 columns
+2021-09-07 10:53:50,607 - gurobipy.gurobipy - INFO - Presolve time: 0.02s
+2021-09-07 10:53:50,607 - gurobipy.gurobipy - INFO - Presolved: 2 rows, 3 columns, 5 nonzeros
+2021-09-07 10:53:50,607 - gurobipy.gurobipy - INFO - 
+2021-09-07 10:53:50,607 - gurobipy.gurobipy - INFO - Iteration    Objective       Primal Inf.    Dual Inf.      Time
+2021-09-07 10:53:50,607 - gurobipy.gurobipy - INFO -        0    1.2500000e+06   1.125000e+03   0.000000e+00      0s
+2021-09-07 10:53:50,607 - gurobipy.gurobipy - INFO - Extra simplex iterations after uncrush: 2
+2021-09-07 10:53:50,607 - gurobipy.gurobipy - INFO -        4    1.2410000e+06   0.000000e+00   0.000000e+00      0s
+2021-09-07 10:53:50,607 - gurobipy.gurobipy - INFO - 
+2021-09-07 10:53:50,607 - gurobipy.gurobipy - INFO - Solved in 4 iterations and 0.02 seconds
+2021-09-07 10:53:50,607 - gurobipy.gurobipy - INFO - Optimal objective  1.241000000e+06

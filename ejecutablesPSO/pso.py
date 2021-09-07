@@ -37,7 +37,7 @@ restriccion_dentro_de_tienda   = {'IC10': 0.4 ,'IC20': 0.6}
 
 Niteraciones = 20
 Nparticulas  = 200
-PSO_params   = {'c1': 1.0, 'c2': 1.0, 'w':1.5}
+PSO_params   = {'c1': 1.0, 'c2': 1.0, 'w':0.5}
 
 #hacer pso por 6 semanas, devuelve el objeto optimizador ya optimizado
 PSO ,costo ,mejor_pos = pso6(Nsku=Nsku ,Nt=Ntiendas ,Ns=Nsemanas ,f=funcion ,R=curvas_BT ,S=curvas_ST,IC=restriccion_dentro_de_tienda ,iter=Niteraciones,Nparticles = Nparticulas ,PSO_params=PSO_params)
