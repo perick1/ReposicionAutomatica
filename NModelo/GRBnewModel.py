@@ -99,8 +99,8 @@ model.addConstrs(V[i,j,1] <= D[i,j][1] for i in SKU for j in Ts)
 model.addConstrs(V[i,j,t] <= D[i,j][t] for i in SKU for j in Ts for t in T if t!=1)
 
 model.addConstrs((opt[i,j,1] == 0) >> (V[i,j,1] >= I0[i,j] + R[i,j,1]) for i in SKU for j in Ts)
-model.addConstrs((opt[i,j,1] == 0) >> (V[i,j,t] >= I[i,j,t-1] + R[i,j,t]) for i in SKU for j in Ts for t in T if t!=1)
-model.addConstrs((opt[i,j,t] == 1) >> (V[i,j,1] >= D[i,j][1]) for i in SKU for j in Ts)
+model.addConstrs((opt[i,j,t] == 0) >> (V[i,j,t] >= I[i,j,t-1] + R[i,j,t]) for i in SKU for j in Ts for t in T if t!=1)
+model.addConstrs((opt[i,j,1] == 1) >> (V[i,j,1] >= D[i,j][1]) for i in SKU for j in Ts)
 model.addConstrs((opt[i,j,t] == 1) >> (V[i,j,t] >= D[i,j][t]) for i in SKU for j in Ts for t in T if t!=1)
 
 '''
