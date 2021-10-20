@@ -39,7 +39,7 @@ Me  =  {(1,1):{1:50 ,2:50 ,3:50 ,4:50},
         (2,2):{1:120 ,2:120 ,3:120 ,4:120}}
 #stock conjunto en tienda
 B   =  {1:{1:800  ,2:800  ,3:800  ,4:800},
-        2:{1:1000 ,2:1000 ,3:1000 ,4:1000}}
+        2:{1:2000 ,2:2000 ,3:2000 ,4:2000}}
 #stock en centro de distribucion
 SCD =  {1:1000,
         2:2000}
@@ -118,30 +118,34 @@ for v in model.getVars():
                     Graficos
 *****************************************************
 '''
-sku = 2
-tienda = 1
+fig, axs = plt.subplots(nrows=len(SKU) ,ncols=len(Ts) ,figsize = (13,8))
+for i in SKU:
+    for j in Ts:
 
-r    = [R[sku,tienda,t].x for t in T] + [0]
-print(sum(r))
-v    = [V[sku,tienda,t].x for t in T]
-inv  = [I[sku,tienda,t].x for t in T]
-inv  = [I0[sku,tienda]] + inv
-d    = [D[sku,tienda][t] for t in T]
-T2   = T + [5]
+        sku = i
+        tienda = j
 
+        r    = [R[sku,tienda,t].x for t in T] + [0]
+        print(sum(r))
+        v    = [V[sku,tienda,t].x for t in T]
+        inv  = [I[sku,tienda,t].x for t in T]
+        inv  = [I0[sku,tienda]] + inv
+        d    = [D[sku,tienda][t] for t in T]
+        T2   = T + [5]
 
-y_offset = np.zeros(5)
-bar_width = 0.6
+        y_offset = np.zeros(5)
+        bar_width = 0.6
 
-fig, ax = plt.subplots(figsize = (8,5))
-ax.plot(T,d,ls = '-',color = 'red',label = 'demanda')
-ax.plot(T,v,ls = '',marker = '*',color = 'blue',label = 'ventas')
-ax.bar(T2, inv, bar_width, bottom=y_offset, color='gray',label = 'inventario')
-y_offset = y_offset + np.array(inv)
-ax.bar(T2, r, bar_width, bottom=y_offset, color='green',label = 'reposicion')
-ax.set_title(f'SKU {sku} en tienda {tienda}')
-ax.legend()
-plt.show(block=False)
+        ax = axs[i-1,j-1]
+        ax.plot(T,d,ls = '-',color = 'red',label = 'demanda')
+        ax.plot(T,v,ls = '',marker = '*',color = 'blue',label = 'ventas')
+        ax.bar(T2, inv, bar_width, bottom=y_offset, color='gray',label = 'inventario')
+        y_offset = y_offset + np.array(inv)
+        ax.bar(T2, r, bar_width, bottom=y_offset, color='green',label = 'reposicion')
+        ax.set_title(f'SKU {sku} en tienda {tienda}')
+        ax.legend()
+        plt.show(block=False)
+fig.tight_layout()
 
 '''
 *****************************************************
