@@ -131,10 +131,60 @@ def ModeloRepoGRB(SKU ,Ts ,T ,P ,C ,D ,SCD ,I0 ,Me ,Tr ,B ,F1 ,F2 ,Fvol ,semana)
     model.optimize()
 
 
-    if T[0]==1:
-        for v in model.getVars():
-            print(str(v.VarName)+' = '+str(round(v.x,2)))
+    #if T[0]==1:
+        #for v in model.getVars():
+        #    print(str(v.VarName)+' = '+str(round(v.x,2)))
+        #for v in R.values():
+            #print("{}: {}".format(v.varName, v.X))
+    vals_repo  = { k : v.X for k,v in R.items() }
+    vals_inve  = { k : v.X for k,v in I.items() }
+    vals_venta = { k : v.X for k,v in V.items() }
+    return {'R':vals_repo , 'I' : vals_inve ,'V' : vals_venta}
 
+def plot4(SKU ,Ts ,T ,Tinv,D ,I0, MDL_vals, MDL_vals_old):
+    fig, axs = plt.subplots(nrows=len(SKU) ,ncols=len(Ts) ,figsize = (10,8))
+    dic = {}
+    for i in SKU:
+        for j in Ts:
+            y_offset = np.zeros(5)
+            x_offset = 0.25
+            bar_width = 0.4
+            ax = axs[i-1,j-1]
+            repo4 = [MDL_vals['R'][i,j,t] for t in T]
+            venta = [MDL_vals['V'][i,j,t] for t in T]
+            inv4  = [MDL_vals['I'][i,j,t] for t in T]
+            inv5  = [I0[i,j]] + inv4
+            #d     = [D[i,j][t] for t in T]
+            #guardo valores historicos
+            dic[(i,j)] = {'R': MDL_vals_old[i,j]['R'] + [repo4[0]],
+                          'I': MDL_vals_old[i,j]['I'] + [inv5[0]] ,
+                          'V': MDL_vals_old[i,j]['V'] + [venta[0]]}
+            ax.fill_between(Tinv,0,500,facecolor='blue', alpha=0.2)
+
+            ax.plot(np.arange(1,len(D[i,j])+1) + 0.5,D[i,j].values(),ls = '-',color = 'red',label = 'demanda')
+            ax.fill_between(np.arange(1,len(D[i,j])+1) + 0.5,0,D[i,j].values(),facecolor='red', alpha=0.4)
+            #valores historicos
+            T_hist = np.arange(1,len(dic[(i,j)]['R'])+1)
+            ax.bar(T_hist - x_offset +0.5, dic[(i,j)]['I'], bar_width, color='gray')
+            #y_offset_hist = np.array(inv5)
+            ax.bar(T_hist - x_offset+ 0.5, dic[(i,j)]['R'], bar_width, bottom=dic[(i,j)]['I'], color='green')
+            ax.bar(T_hist + x_offset+ 0.5, dic[(i,j)]['V'], bar_width, color='orange')
+
+            #nueva optimizacion
+            ax.bar(Tinv- x_offset +0.5, inv5, bar_width, bottom=y_offset, color='gray',label = 'inventario')
+            y_offset = y_offset + np.array(inv5)
+            ax.bar(T- x_offset+ 0.5, repo4, bar_width, bottom=inv5[:-1], color='green',label = 'reposicion')
+            ax.bar(T+ x_offset+ 0.5, venta, bar_width, color='orange',label ='venta')
+            ax.set_title(f'SKU {i} en tienda {j}')
+            ax.set_ylim(0,500)
+            ax.set_xlim(1,15)
+            ax.xaxis.set_ticks([n+1 for n in range(Nsemanas+1)])
+            ax.legend()
+            ax.grid(axis = 'both' ,color='gray', linestyle='--', linewidth=0.5)
+            plt.show(block=False)
+            fig.tight_layout()
+
+    return dic
 '''
 *****************************************************
                     Parametros
@@ -149,6 +199,8 @@ Mprecios    = np.array([[2990 ,3990],
 
 #costos
 Mcostos     = Mprecios * 0.3
+#Mcostos     = np.array([[2990 ,3990],
+#                        [10990 ,10990]])
 Nsemanas    = np.sum(semanas)
 
 #minimo exhibicion
@@ -194,23 +246,39 @@ Fvol = {i:1 for i in SKU}
 F1   = {t:0*t for t in TT}#en tienda
 F2   = {t:0*t for t in TT}#scd
 
+#parametros auxiliares
+MDL_vals_old = {(i,j) : {'R':[],'I':[],'V':[]} for i in SKU for j in Ts}
 '''
 *****************************************************
                     Optimizacion
 *****************************************************
 '''
 for sem in TT[:-3]:
-    T   = [sem ,sem+1 ,sem+2 ,sem+3]
+    T    = [sem ,sem+1 ,sem+2 ,sem+3]
+    Tinv = [sem ,sem+1 ,sem+2 ,sem+3 ,sem+4]
     print(T)
     #optimizar 4 semans
-    ModeloRepoGRB(SKU ,Ts ,T ,P ,C ,D ,SCD ,I0 ,Me ,Tr ,B ,F1 ,F2 ,Fvol ,sem)
-    #actualizar valores de inventario y SCD
-
+    MDL_vals = ModeloRepoGRB(SKU ,Ts ,T ,P ,C ,D ,SCD ,I0 ,Me ,Tr ,B ,F1 ,F2 ,Fvol ,sem)
     #Obtener valores para graficar
+    T    = np.array(T)
+    Tinv = np.array(Tinv)
 
+    MDL_vals_old = plot4(SKU ,Ts ,T ,Tinv,D ,I0, MDL_vals, MDL_vals_old)
+    #actualizar valores de inventario y SCD
+    I0 = {(i,j) : MDL_vals['I'][i,j,sem] for i in SKU for j in Ts}
+    repartido = {i : sum({j: MDL_vals['R'][i,j,sem] for j in Ts}.values()) for i in SKU}
+    SCD = {i : SCD[i] - repartido[i] for i in SKU}
 '''
 *****************************************************
                     Graficos
+*****************************************************
+'''
+
+
+
+'''
+*****************************************************
+                    Fin
 *****************************************************
 '''
 t2 = time.time()
