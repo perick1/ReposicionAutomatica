@@ -48,7 +48,7 @@ def Demanda(Mdemanda ,Npeak , tamano ,Nsemanas):
     rows ,cols = Mdemanda.shape
     for i in range(rows):
         for j in range(cols):
-            Demanda     = Mme[i,j]
+            Demanda     = Mdemanda[i,j]
             key         = (i+1 ,j+1)
             dic_semanas = { s+1 : int(Demanda) for s in range(Nsemanas) }
             dic[key]    = dic_semanas
@@ -82,9 +82,10 @@ def InventarioInicial(Minv):
             dic[key] = inv0
     return dic
 
-def ModeloRepoGRB(SKU ,Ts ,T ,P ,C ,D ,SCD ,I0 ,Me ,Tr ,B ,F1 ,F2 ,Fvol ,semana):
+def ModeloRepoGRB(SKU ,Ts ,T ,P ,C ,D ,SCD0 ,I0 ,Me ,Tr ,B ,F1 ,F2 ,Fvol ,semana):
     #combinaciones
-    comb = [(i,j,t) for i in SKU for j in Ts for t in T]
+    comb    = [(i,j,t) for i in SKU for j in Ts for t in T]
+    combSCD = [(i,t) for i in SKU for t in T]
     #crear modelo
     model = Model('Repo')
     model.Params.LogToConsole = 0
@@ -92,39 +93,42 @@ def ModeloRepoGRB(SKU ,Ts ,T ,P ,C ,D ,SCD ,I0 ,Me ,Tr ,B ,F1 ,F2 ,Fvol ,semana)
     R   = model.addVars(comb ,vtype=GRB.INTEGER ,name='R')
     V   = model.addVars(comb ,vtype=GRB.INTEGER ,name='V')
     I   = model.addVars(comb ,vtype=GRB.INTEGER ,name='I')
+    SCD = model.addVars(combSCD ,vtype=GRB.INTEGER ,name='SCD')
     opt = model.addVars(comb ,vtype=GRB.BINARY ,name='opt')
     #funcion objetivo
-    z  = quicksum(V[i,j,t] * (P[i,j][t] - C[i,j][t]) for i in SKU for j in Ts for t in T)
-    c1 = quicksum(I[i,j,t] * Fvol[i] * F1[t] for i in SKU for j in Ts for t in T)
-    c2 = quicksum((SCD[i] -  quicksum(R[i,j,tau] for j in Ts for tau in T[:t])) * Fvol[i] * F2[t] for i in SKU for t in T)
+    print(comb)
+    z  = quicksum(V[i,j,t] * (P[i,j][t] - C[i,j][t]) for i,j,t in comb)
+    c1 = quicksum(I[i,j,t] * Fvol[i] * F1[t] for i,j,t in comb)
+    c2 = quicksum(SCD[i,t] * Fvol[i] * F2[t] for i,t in combSCD)
     model.setObjective(z - c1 - c2 ,GRB.MAXIMIZE)
 
     #restricciones
 
     #reposicion no negativa
-    model.addConstrs(R[i,j,t] >= 0 for i in SKU for j in Ts for t in T)
+    model.addConstrs(R[i,j,t] >= 0 for i,j,t in comb)
     #cumplir minimos de exhibicion
-
-    model.addConstrs(I[i,j,t] >= Me[i,j][t] for i in SKU for j in Ts for t in T)
+    model.addConstrs(I[i,j,t] >= Me[i,j][t] for i,j,t in comb)
+    #model.addConstrs((opt[i,j,t] == 1) >> (I[i,j,t] >= Me[i,j][t]) for i in SKU for j in Ts for t in T)
     #reparticion no supera el stock disponible en CdD
-    model.addConstrs(quicksum(R[i,j,t] for j in Ts for t in T) <= SCD[i] for i in SKU)
+    model.addConstrs(quicksum(R[i,j,t] for j in Ts for t in T) <= SCD[i,semana] for i in SKU)
     #no superar maximo almacenaje en tiendas
     model.addConstrs(quicksum(R[i,j,semana] + I0[i,j] for i in SKU) <= B[j][semana] for j in Ts)
     model.addConstrs(quicksum(R[i,j,t] + I[i,j,t-1] for i in SKU) <= B[j][t] for j in Ts for t in T if t!=semana)
     #continuidad de inventario
     model.addConstrs(R[i,j,semana] + I0[i,j] - V[i,j,semana] - I[i,j,semana] == 0 for i in SKU for j in Ts)
-    model.addConstrs(R[i,j,t] + I[i,j,t-1] - V[i,j,t] - I[i,j,t] == 0 for i in SKU for j in Ts for t in T if t!=semana)
+    model.addConstrs(R[i,j,t] + I[i,j,t-1] - V[i,j,t] - I[i,j,t] == 0 for i,j,t in comb if t!=semana)
+    #continuidad de stock en CD
+    #model.addConstrs(SCD[i,semana] + SCD0[i] - quicksum(R[i,j,semana] for j in Ts) == 0 for i in SKU)
+    #model.addConstrs(SCD[i,t] + SCD[i,t-1] - quicksum(R[i,j,t] for j in Ts) == 0 for i,t in combSCD if t!=semana)
+
     #restricciones logicas
     model.addConstrs(V[i,j,semana] <= I0[i,j] + R[i,j,semana] for i in SKU for j in Ts)
-    model.addConstrs(V[i,j,t] <= I[i,j,t-1] + R[i,j,t] for i in SKU for j in Ts for t in T if t!=semana)
-
-    model.addConstrs(V[i,j,semana] <= D[i,j][semana] for i in SKU for j in Ts)
-    model.addConstrs(V[i,j,t] <= D[i,j][t] for i in SKU for j in Ts for t in T if t!=semana)
+    model.addConstrs(V[i,j,t] <= I[i,j,t-1] + R[i,j,t] for i,j,t in comb if t!=semana)
+    model.addConstrs(V[i,j,t] <= D[i,j][t] for i,j,t in comb)
 
     model.addConstrs((opt[i,j,semana] == 0) >> (V[i,j,semana] >= I0[i,j] + R[i,j,semana]) for i in SKU for j in Ts)
-    model.addConstrs((opt[i,j,t] == 0) >> (V[i,j,t] >= I[i,j,t-1] + R[i,j,t]) for i in SKU for j in Ts for t in T if t!=semana)
-    model.addConstrs((opt[i,j,semana] == 1) >> (V[i,j,semana] >= D[i,j][semana]) for i in SKU for j in Ts)
-    model.addConstrs((opt[i,j,t] == 1) >> (V[i,j,t] >= D[i,j][t]) for i in SKU for j in Ts for t in T if t!=semana )
+    model.addConstrs((opt[i,j,t] == 0) >> (V[i,j,t] >= I[i,j,t-1] + R[i,j,t]) for i,j,t in comb if t!=semana)
+    model.addConstrs((opt[i,j,t] == 1) >> (V[i,j,t] >= D[i,j][t]) for i,j,t in comb)
 
     #Restriccion limite de trasporte semanal
     model.addConstrs(quicksum(R[i,j,t] * Fvol[i] for i in SKU for j in Ts) <= Tr[t] for t in T)
@@ -193,6 +197,20 @@ def plot4(SKU ,Ts ,T ,Tinv,D ,I0, MDL_vals, MDL_vals_old):
 
     return [dic ,final]
 
+def ModeloVariasVentanas(Tt ,vT,SKU ,Ts ,P ,C ,D ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol):
+    #tiempo total en semanas
+    TT = [ t+1 for t in range(Tt)]
+    #otros costos
+    F1   = {t:0*t for t in TT}#en tienda
+    F2   = {t:1*t for t in TT}#scd
+    for sem in TT[:-(vT)]:
+        T = np.arange(sem,sem+vT)
+        print(T)
+        ModeloRepoGRB(SKU ,Ts ,T ,P ,C ,D ,SCD0 ,I0 ,Me ,Tr ,B ,F1 ,F2 ,Fvol ,sem)
+
+def plotQuiebres():
+    pass
+
 '''
 *****************************************************
                     Parametros
@@ -216,14 +234,16 @@ Mme         = np.array([[100 ,50 ],
                         [50  ,40 ]])
 
 #demanda
-Mdemanda    = np.array([[300 ,300 ],
-                        [150 ,100]])
+#Mdemanda    = np.array([[300 ,300 ],
+#                        [150 ,100]])
+Mdemanda    = np.array([[50 ,50 ],
+                        [15 ,10]])
 Npeak       = 6
 tamano      = 4
 
 #trasporte
 capacidad   = 1500
-
+#capacidad   = np.sum(Mme) + 1500
 
 #stock conjunto maximo en tiendas
 Lcapacidad  = np.array([1000, 800])
@@ -233,8 +253,8 @@ Minv        = np.array([[0 ,0 ],
                         [0 ,0]])
 
 #stock en centro de distribucion
-SCD =  {1:100000,
-        2:120000}
+SCD0 =  {1:100000,
+         2:120000}
 
 #obtengo curvas para utilizar
 P       = CurvaPrecio(Mprecios ,fracciones ,semanas)
@@ -242,26 +262,26 @@ I0      = InventarioInicial(Minv)
 D       = Demanda(Mdemanda ,Npeak , tamano ,Nsemanas)
 C       = Costos(Mcostos ,Nsemanas)
 Me      = MinExhibicion(Mme ,Nsemanas)
-capacidad   = np.sum(Mme) + 300
 Tr      = Transporte(capacidad ,Nsemanas)
 B       = StockTiendas(Lcapacidad ,Nsemanas)
 
 #tiendas y skus
 SKU = [1 ,2]
 Ts  = [1 ,2]
-#tiempo total en semanas
-TT = [ t+1 for t in range(13)]
-#otros costos
-Fvol = {i:1 for i in SKU}
-F1   = {t:0*t for t in TT}#en tienda
-F2   = {t:0*t for t in TT}#scd
+#parametros temporales, ventana de tiempo y optimizacion total]
+vT  = 8
+Tt  = 20
 
+Fvol = {i:1 for i in SKU}
 #parametros auxiliares
 MDL_vals_old = {(i,j) : {'R':[],'I':[],'V':[]} for i in SKU for j in Ts}
 '''
 *****************************************************
                     Optimizacion
 *****************************************************
+'''
+
+ModeloVariasVentanas(Tt ,vT,SKU ,Ts ,P ,C ,D ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)
 '''
 SCD_bodega = np.zeros((2,Nsemanas))
 for sem in TT[:-3]:
@@ -281,11 +301,15 @@ for sem in TT[:-3]:
     SCD = {i : SCD[i] - repartido[i] for i in SKU}
     SCD_bodega[0,sem-1] = SCD[1]
     SCD_bodega[1,sem-1] = SCD[2]
+    '''
 '''
 *****************************************************
                     Graficos
 *****************************************************
 '''
+'''
+t2 = time.time()
+print('tiempo de ejecucion: ',round(t2-t1,2))
 bar_width = 0.8
 
 color = np.array([['cyan' ,'magenta' ],
@@ -309,11 +333,10 @@ ax.legend()
 ax.grid(axis = 'both' ,color='gray', linestyle='--', linewidth=0.5)
 plt.show(block=False)
 fig.tight_layout()
+'''
 
 '''
 *****************************************************
                     Fin
 *****************************************************
 '''
-t2 = time.time()
-print('tiempo de ejecucion: ',round(t2-t1,2))
