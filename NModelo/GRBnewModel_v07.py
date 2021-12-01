@@ -105,11 +105,10 @@ def ModeloRepoGRB(SKU ,Ts ,T ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B  ,Fvol ,semana):
     c31 = quicksum(quicksum(I0[i,j] + R[i,j,semana] for i in SKU) * m / B[j][semana] + n for j in Ts)
     c32 = quicksum(quicksum(I[i,j,t-1] + R[i,j,t] for i in SKU) * m / B[j][t] + n for j in Ts for t in T if t!=semana)        #beneficio por mantener la tienda al tanto%
     c4 =  quicksum(opt[i,j,t] * 100000 for i,j,t in comb) #ingreso economico por ventas
-    #model.setObjective(z  - c1- c2 + c31 + c32 ,GRB.MAXIMIZE)
-    model.setObjective(z+c4,GRB.MAXIMIZE)
+    #model.setObjective(z  - c1- c2 + c31 + c32 +c4 ,GRB.MAXIMIZE)
+    model.setObjective(z- c1- c2 + c4,GRB.MAXIMIZE)
 
     #restricciones
-
     #reposicion no negativa
     model.addConstrs(R[i,j,t] >= 0 for i,j,t in comb)
     #cumplir minimos de exhibicion
@@ -158,9 +157,9 @@ def ModeloVariasVentanas(Tt ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol):
     GRB_venta = {}
     GRB_SCD = {}
     GRB_opt = {}
-    for sem in TT[:-(vT)]:
+    for sem in TT[:-(vT)+1]:
         T = np.arange(sem,sem+vT)
-        print(T)
+        #print(T)
         vals    = ModeloRepoGRB(SKU ,Ts ,T ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol ,sem)
         #actualizo valores
         SCD0    = {i : vals['SCD'][i,sem] for i in SKU}
@@ -172,9 +171,18 @@ def ModeloVariasVentanas(Tt ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol):
         GRB_opt[sem]    = {(i,j) : vals['opt'][i,j,sem] for i in SKU for j in Ts}
         GRB_SCD[sem]    = SCD0
         GRB_inve[sem]   = I0
+    for sem in T:
+        #guardo los resiltados de la ultima iteracion tambien
+        #print(sem)
+        GRB_repo[sem]   = {(i,j) : vals['R'][i,j,sem] for i in SKU for j in Ts}
+        GRB_venta[sem]  = {(i,j) : vals['Q'][i,j,sem] for i in SKU for j in Ts}
+        GRB_opt[sem]    = {(i,j) : vals['opt'][i,j,sem] for i in SKU for j in Ts}
+        GRB_SCD[sem]    = {i : vals['SCD'][i,sem] for i in SKU}
+        GRB_inve[sem]   = {(i,j) : vals['I'][i,j,sem] for i in SKU for j in Ts}
+
     return {'repo':GRB_repo ,'inventario': GRB_inve, 'SCD':  GRB_SCD, 'opt' :GRB_opt , 'venta': GRB_venta}
 
-def obtenerCurvas(modelvals, SKU, Ts, Nsemanas):
+def obtenerCurvas(modelvals, SKU, Ts, Nsemanas, SCD0, I0):
     '''
     Recibe valores obtenidos del modelo en un diccionario con 5 keys(cada variable del modelo)
     cada una contiene un diccionario con claves desde el 1 a Nsemanas. cada semana tiene
@@ -204,8 +212,16 @@ def obtenerCurvas(modelvals, SKU, Ts, Nsemanas):
                 M[3,i-1,j-1,t-1] = modelvals['opt'][t][i,j]
                 if j==1:
                     StockCD[i-1,t-1] = modelvals['SCD'][t][i]
-
-
+    #calculo ocupacion de las tiendas
+    Inv0 = np.sum(I0,axis = 0).reshape((NTs,1))
+    RepartidoT  = np.sum(M[0], axis = 0)
+    InventarioT = np.sum(M[1], axis = 0)
+    InventarioT = np.append(Inv0, InventarioT[:,:-1], axis = 1)
+    CapT = RepartidoT + InventarioT
+    #agrego stock inicial en cd
+    Scd0 = np.array([SCD0[i] for i in SKU]).reshape((NSKU,1))
+    StockCD = np.append(Scd0, StockCD, axis = 1)
+    return [M ,StockCD,CapT]
 
 def plotQuiebres():
     pass
@@ -215,7 +231,6 @@ def plotQuiebres():
                     Parametros
 *****************************************************
 '''
-t1 = time.time()
 #x = np.arange(100)
 #plt.plot(x,Normal(x,80,0.001,1))
 #plt.show()
@@ -255,7 +270,7 @@ Minv        = np.array([[0 ,0 ],
                         [0 ,0]])
 
 #stock en centro de distribucion
-SCD0 =  {1:100000,
+SCD0 =  {1:1000,
          2:120000}
 
 #obtengo curvas para utilizar
@@ -281,9 +296,12 @@ Fvol = {i:1 for i in SKU}
                     Optimizacion
 *****************************************************
 '''
-
-output_vars = ModeloVariasVentanas(Nsemanas ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)
-
+t1 = time.time()
+output_vals = ModeloVariasVentanas(Nsemanas ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)
+Mvals, scd_model, ocupado_tiendas = obtenerCurvas(output_vals, SKU, Ts, Nsemanas, SCD0, Minv)
+RepartidoT = Mvals[0]
+t2 = time.time()
+print('tiempo de ejecucion: ',round(t2-t1,2))
 '''
 *****************************************************
                     Graficos
