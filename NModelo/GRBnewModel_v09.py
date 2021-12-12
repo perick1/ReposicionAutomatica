@@ -311,33 +311,52 @@ def plotRepoTransporte(Mrepo, CapTr):
     plt.show(block=False)
     fig.tight_layout()
 
-def plotRepoQuiebres(M, I0, F, tienda, sku):
+def plotRepoQuiebres(M, I0, F,vT, tienda, sku):
     tienda  = tienda - 1
     sku     = sku - 1
     repo    = M[0 ,sku,tienda]
     inve    = M[1 ,sku,tienda]
     Q       = M[2 ,sku,tienda]
-    inve    = M[3 ,sku,tienda]
+    opt     = M[3 ,sku,tienda]
     Nsemanas= len(repo)
-    #I0      = I0[:,tienda].reshape((Nsku,1))
-    #repo    = np.append(repo, np.zeros((Nsku,1)), axis = 1)
-    #inve    = np.append(I0, inve, axis = 1)
+    I0      = I0[sku,tienda]
+    inve    = np.append([I0], inve[:-1])
     #grafico
-    fig, ax = plt.subplots(figsize = (6,2.5))
-    y_offset = np.zeros(Nsemanas + 1)
-    x_offset = 0.25
-    x = np.arange(Nsemanas)
-    bar_width = 0.4
-    D = [F[sku, tienda][t] for t in range(1,Nsemanas+1)]
-    maxinv = np.max(repo) + np.max(inve)
+    fig, ax = plt.subplots(figsize = (6.5,3))
+    x_offset= 0.24
+    x       = np.arange(1,Nsemanas+1)
+    xfill     = np.copy(x)
+    xfill[0]  = x[0] - 1
+    xfill[-1] = x[-1] + 1
+    bar_width = 0.45
+    D = [F[sku +1, tienda +1][t] for t in range(1,Nsemanas+1)]
+    #D = F[sku + 1, tienda + 1].values()
+    max   = np.max([np.max(repo+inve),np.max(D)])
 
-    ax.fill_between(x,D,maxinv,facecolor='g', alpha=0.4)
+    #r_bar_he = np.mean([maxinv,np.mean(D)])
+    r_bar_he = 0.45
+    x_rbar   = np.arange(Nsemanas-vT,Nsemanas+1) +0.5
+    print(inve)
 
-    ax.set_title(f'Optimizacion para 20 semanas con ventana de 8, normalizada')
-    ax.set_xlim(0,Nsemanas+1)
-    #ax.set_ylim(0,500)
-    ax.xaxis.set_ticks([n for n in range(Nsemanas+1)])
-    #ax.legend()
+    ax.fill_between(xfill,D/max,1.2,facecolor='g', alpha=0.4,label = 'Sobredemanda')
+    ax.fill_between(x_rbar,0.45,0.55,facecolor='red', alpha=0.6,label = 'Ventana opt.')
+    ax.bar(x - x_offset, inve/max, bar_width, color='gray',alpha = 0.5,label = 'Inventario')
+    ax.bar(x - x_offset, repo/max, bar_width, bottom=inve, color='blue',alpha = 0.5,label = 'Reposicion')
+    ax.bar(x + x_offset, Q/max, bar_width, color='orange',alpha = 0.5,label = 'Demanda ajustada')
+    print(opt)
+
+    for t in range(Nsemanas):
+        if opt[t] == 0:
+            ytext = ((inve[t]+repo[t])/max)
+            xtext = x[t] - 0.25
+            print(xtext,ytext)
+            ax.annotate('x',xy=(xtext, ytext), xycoords='data',fontsize=15,color = 'red',weight = 'bold')
+
+    ax.set_title(f'Optimizacion 20/8 semanas.SKU {sku + 1}, tienda {tienda+1}. Normalizado')
+    ax.set_xlim(0.5,Nsemanas+0.5)
+    ax.set_ylim(0,1.1)
+    ax.xaxis.set_ticks([n for n in range(1,Nsemanas+1)])
+    ax.legend(ncol = 3,loc='center left', bbox_to_anchor=(0.05, -0.3))
     ax.grid(axis = 'both' ,color='gray', linestyle='--', linewidth=0.5)
     plt.show(block=False)
     fig.tight_layout()
@@ -425,14 +444,14 @@ print('tiempo de ejecucion: ',round(t2-t1,2))
                     Graficos
 *****************************************************
 '''
-#tienda = 1
-#plotOcupaTienda(Mvals,Minv,Lcapacidad,tienda)
+tienda = 1
+plotOcupaTienda(Mvals,Minv,Lcapacidad,tienda)
 tienda = 2
-#plotOcupaTienda(Mvals,Minv,Lcapacidad,tienda)
-#plotSCDhistorico(scd_model,SCD0)
-#plotRepoTransporte(Mvals[0], capacidad)
+plotOcupaTienda(Mvals,Minv,Lcapacidad,tienda)
+plotSCDhistorico(scd_model,SCD0)
+plotRepoTransporte(Mvals[0], capacidad)
 sku = 2
-plotRepoQuiebres(Mvals, Minv, F, tienda, sku)
+plotRepoQuiebres(Mvals, Minv, F, vT, tienda, sku)
 '''
 *****************************************************
                     Fin
