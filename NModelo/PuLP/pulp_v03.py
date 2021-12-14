@@ -1,14 +1,14 @@
-import numpy as np
 import matplotlib.pyplot as plt
+from pulp import *#pulp 2.5.1
 import matplotlib.colors as mcolors
-from gurobipy import *
+import numpy as np
 import time
+
 '''
 *****************************************************
                     Funciones
 *****************************************************
 '''
-
 def CurvaPrecio(Mprecios ,fracciones ,semanas):
     dic = {}
     rows ,cols = Mprecios.shape
@@ -84,19 +84,19 @@ def InventarioInicial(Minv):
             dic[key] = inv0
     return dic
 
-def ModeloRepoGRB(SKU ,Ts ,T ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B  ,Fvol ,semana):
+def ModeloRepoPuLP(SKU ,Ts ,T ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol ,semana):
     #combinaciones
-    comb    = [(i,j,t) for i in SKU for j in Ts for t in T]
+    comb = [(i,j,t) for i in SKU for j in Ts for t in T]
     combSCD = [(i,t) for i in SKU for t in T]
     #crear modelo
-    model = Model('Repo')
-    model.Params.LogToConsole = 0
+    lp = LpProblem('RepoPuLP', LpMaximize)
+
     #agregar variables
-    R   = model.addVars(comb ,vtype=GRB.INTEGER ,name='R')
-    Q   = model.addVars(comb ,vtype=GRB.INTEGER ,name='Q')
-    I   = model.addVars(comb ,vtype=GRB.INTEGER ,name='I')
-    SCD = model.addVars(combSCD ,vtype=GRB.INTEGER ,name='SCD')
-    opt = model.addVars(comb ,vtype=GRB.BINARY ,name='opt')
+    R    = LpVariable.dicts('R', comb, lowBound = 0, cat = 'Integer')
+    Q    = LpVariable.dicts('Q', comb, lowBound = 0, cat = 'Integer')
+    I    = LpVariable.dicts('I', comb, lowBound = 0, cat = 'Integer')
+    SCD  = LpVariable.dicts('SCD', combSCD, lowBound = 0, cat = 'Integer')
+    opt  = LpVariable.dicts('opt', comb,lowBound = None, cat = 'Binary')
     #funcion objetivo
 
     Gz1 = 0 #precio
@@ -105,52 +105,70 @@ def ModeloRepoGRB(SKU ,Ts ,T ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B  ,Fvol ,semana):
     Gb1 = 1 #beneficio por evitar quiebres
     Gc1 = 1 #costo por tardar en vender
 
-    z1 = quicksum(Q[i,j,t] * (P[i,j][t] - C[i,j][t]) * Gz1 * (T[-1] - t)**2 for i,j,t in comb)
-    z2 = quicksum(Q[i,j,t] * Gz2 * (T[-1] - t)**2 for i,j,t in comb)
+    z1 = (lpSum(Q[(i,j,t)] * (P[i,j][t] - C[i,j][t]) * Gz1 * (T[-1] - t)**2 for i,j,t in comb))
+    z2 = (lpSum(Q[(i,j,t)] * Gz2 * (T[-1] - t)**2 for i,j,t in comb))
 
-    B1 = quicksum(opt[i,j,t] * F[i,j][t] * Gb1 * (T[-1] - t)**2 for i,j,t in comb)
-    C1 = quicksum(SCD[i,t] * Fvol[i] * Gc1 * t for i,t in combSCD)
-
-    model.setObjective(z1 + z2 + B1 - C1 ,GRB.MAXIMIZE)
-
+    B1 = (lpSum(opt[(i,j,t)] * F[i,j][t] * Gb1 * (T[-1] - t)**2 for i,j,t in comb))
+    C1 = (lpSum(SCD[(i,t)] * Fvol[i] * Gc1 * t for i,t in combSCD))
+    lp += z1 + z2 + B1 - C1
     #restricciones
-    #reposicion no negativa
-    model.addConstrs(R[i,j,t] >= 0 for i,j,t in comb)
-    #reparticion no supera el stock disponible en CdD
-    model.addConstrs(quicksum(R[i,j,semana] for j in Ts) <= SCD0[i] for i in SKU)
-    model.addConstrs(quicksum(R[i,j,t] for j in Ts) <= SCD[i,t] for i,t in combSCD if t!=semana)
+
+    for i in SKU:
+        for j in Ts:
+            bigMinv = I0[i,j] + SCD0[i]
+            for t in T:
+                #opt=1:elijo elijo forecast
+                #opt=0:elijo inventario
+                #bigMs
+                #bigMfc = 2 * F[i,j][t]
+                bigMex = 2 * Me[i,j][t]
+                #restricciones logicas
+                lp += (Q[(i,j,t)] >= F[i,j][t] + bigMinv * (opt[(i,j,t)] - 1))
+                lp += (Q[(i,j,t)] <= F[i,j][t])
+
+                if t==semana:
+                    #continuidad de inventario
+                    lp += (R[(i,j,semana)] + I0[i,j] - Q[(i,j,semana)] - I[(i,j,semana)] == 0)
+                    #restricciones logicas
+                    lp += (Q[(i,j,semana)] <= I0[i,j] + R[(i,j,semana)])
+                    #lp += (Q[(i,j,semana)] <= D[i,j][semana])
+                    lp += (Q[(i,j,semana)] >= I0[i,j] + R[(i,j,semana)] - bigMinv*(opt[(i,j,semana)]))
+                    #lp += (Q[(i,j,semana)] >= D[i,j][semana] - M*opt[(i,j,semana)])
+                else:
+                    #continuidad de inventario
+                    lp += (R[(i,j,t)] + I[(i,j,t-1)] - Q[(i,j,t)] - I[(i,j,t)] == 0)
+                    #restricciones logicas
+                    lp += (Q[(i,j,t)] <= I[i,j,t-1] + R[(i,j,t)])
+                    lp += (Q[(i,j,t)] >= (I[i,j,t-1] + R[(i,j,t)]) - bigMinv *(opt[(i,j,t)]))
+                    lp += (I[(i,j,t-1)] >= Me[i,j][t] + bigMex * (opt[(i,j,t)] - 1))
     #no superar maximo almacenaje en tiendas
-    model.addConstrs(quicksum(R[i,j,semana] + I0[i,j] for i in SKU) <= B[j][semana] for j in Ts)
-    model.addConstrs(quicksum(R[i,j,t] + I[i,j,t-1] for i in SKU) <= B[j][t] for j in Ts for t in T if t!=semana)
-    #continuidad de inventario
-    model.addConstrs(R[i,j,semana] + I0[i,j] - Q[i,j,semana] - I[i,j,semana] == 0 for i in SKU for j in Ts)
-    model.addConstrs(R[i,j,t] + I[i,j,t-1] - Q[i,j,t] - I[i,j,t] == 0 for i,j,t in comb if t!=semana)
-    #continuidad de stock en CD
-    model.addConstrs(SCD[i,semana] - SCD0[i] + quicksum(R[i,j,semana] for j in Ts) == 0 for i in SKU)
-    model.addConstrs(SCD[i,t] - SCD[i,t-1] + quicksum(R[i,j,t] for j in Ts) == 0 for i,t in combSCD if t!=semana)
-    #restricciones logicas
-    model.addConstrs(Q[i,j,semana] <= I0[i,j] + R[i,j,semana] for i in SKU for j in Ts)
-    model.addConstrs(Q[i,j,t] <= I[i,j,t-1] + R[i,j,t] for i,j,t in comb if t!=semana)
-    model.addConstrs(Q[i,j,t] <= F[i,j][t] for i,j,t in comb)
-
-    model.addConstrs((opt[i,j,semana] == 0) >> (Q[i,j,semana] >= I0[i,j] + R[i,j,semana]) for i in SKU for j in Ts)
-    model.addConstrs((opt[i,j,t] == 0) >> (Q[i,j,t] >= I[i,j,t-1] + R[i,j,t]) for i,j,t in comb if t!=semana)
-    model.addConstrs((opt[i,j,t] == 0) >> (Q[i,j,t] <= F[i,j][t] - 1) for i,j,t in comb)
-    model.addConstrs((opt[i,j,t] == 1) >> (Q[i,j,t] >= F[i,j][t]) for i,j,t in comb)
-    model.addConstrs((opt[i,j,t] == 1) >> (I[i,j,t-1] >= Me[i,j][t]) for i,j,t in comb if t!=semana)
-
+    for i in SKU:
+        for t in T:
+            if t==semana:
+                lp += (lpSum(R[(i,j,semana)] for j in Ts) <= SCD0[i])
+                lp += (SCD[(i,semana)] - SCD0[i] + lpSum(R[(i,j,semana)] for j in Ts) == 0)
+            else:
+                lp += (lpSum(R[(i,j,t)] for j in Ts) <= SCD[(i,t)])
+                lp += (SCD[(i,t)] - SCD[(i,t-1)] + lpSum(R[(i,j,t)] for j in Ts) == 0)
+    for j in Ts:
+        for t in T:
+            if t==semana:
+                lp += (lpSum(R[(i,j,semana)] + I0[i,j] for i in SKU) <= B[j][semana])
+            else:
+                lp += (lpSum(R[(i,j,t)] + I[(i,j,t-1)] for i in SKU) <= B[j][t])
     #Restriccion limite de trasporte semanal
-    model.addConstrs(quicksum(R[i,j,t] * Fvol[i] for i in SKU for j in Ts) <= Tr[t] for t in T)
-
-    model.optimize()
-    obj = model.getObjective()
-    print(obj.getValue())
-
-    vals_repo  = { k : v.X for k,v in R.items() }
-    vals_inve  = { k : v.X for k,v in I.items() }
-    vals_venta = { k : v.X for k,v in Q.items() }
-    vals_SCD   = { k : v.X for k,v in SCD.items() }
-    vals_opt   = { k : v.X for k,v in opt.items() }
+    for t in T:
+        lp += (lpSum(R[(i,j,t)] * Fvol[i] for i in SKU for j in Ts) <= Tr[t])
+    #Resolver el LP
+    status = lp.solve(PULP_CBC_CMD(msg=0))
+    #Imprimir la solución
+    print(value(lp.objective))
+    #guardo valor de los resultados de la optimizacion
+    vals_repo  = { k : R[k].varValue for k in R }
+    vals_inve  = { k : I[k].varValue for k in I }
+    vals_venta = { k : Q[k].varValue for k in Q }
+    vals_SCD   = { k : SCD[k].varValue for k in SCD }
+    vals_opt   = { k : opt[k].varValue for k in opt }
     return {'R':vals_repo , 'I' : vals_inve ,'Q' : vals_venta , 'SCD' : vals_SCD ,'opt' : vals_opt}
 
 def ModeloVariasVentanas(Tt ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol):
@@ -165,7 +183,7 @@ def ModeloVariasVentanas(Tt ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol):
     for sem in TT[:-(vT)+1]:
         T = np.arange(sem,sem+vT)
         #print(T)
-        vals    = ModeloRepoGRB(SKU ,Ts ,T ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol ,sem)
+        vals    = ModeloRepoPuLP(SKU ,Ts ,T ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol ,sem)
         #actualizo valores
         SCD0    = {i : vals['SCD'][i,sem] for i in SKU}
         I0      = {(i,j) : vals['I'][i,j,sem] for i in SKU for j in Ts}
