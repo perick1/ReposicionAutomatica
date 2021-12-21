@@ -24,6 +24,17 @@ v07:	- Se añaden quiebres de stock modificando parámetros.
 	- Se agraga grafico que muestre quiebres
 	- Se cambia restricción defectuosa de minimo de exhibición
 
+v09:	- Se escribe a la par de pulpv03
+	- Se obtiene la ganancia por ventas reales
+	- Se adapta para ventana 1
+v10:	- intento fallido de implementar ruido al forecast
+
+v11:	- implementación exitosa de ruido al forecast
+	- se añade funcion curvaForcastRuido() que permite graficar la demanda "real" en los graficos.
+
+v12:	- Se añanden gif de ventanas
+
+
 
 
 
