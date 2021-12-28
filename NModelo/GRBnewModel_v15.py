@@ -100,7 +100,7 @@ def ModeloRepoGRB(SKU ,Ts ,T ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B  ,Fvol ,semana):
     opt = model.addVars(comb ,vtype=GRB.BINARY ,name='opt')
     #funcion objetivo
 
-    Gz1 = 0 #precio
+    Gz1 = 1 #precio
     Gz2 = 1 #solo cantidad
 
     Gb1 = 1 #beneficio por evitar quiebres
@@ -169,7 +169,7 @@ def ModeloRepoGRB1semana(SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B  ,Fvol ,semana):
     opt = model.addVars(comb ,vtype=GRB.BINARY ,name='opt')
     #funcion objetivo
 
-    Gz1 = 0 #precio
+    Gz1 = 1 #precio
     Gz2 = 1 #solo cantidad
 
     Gb1 = 1 #beneficio por evitar quiebres
@@ -210,7 +210,7 @@ def ModeloRepoGRB1semana(SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B  ,Fvol ,semana):
     #if semana == 5:
     #    print(model.display())
     obj = model.getObjective()
-    print(obj.getValue())
+    #print(obj.getValue())
 
     vals_repo  = { k : v.X for k,v in R.items() }
     vals_inve  = { k : v.X for k,v in I.items() }
@@ -218,6 +218,7 @@ def ModeloRepoGRB1semana(SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B  ,Fvol ,semana):
     vals_SCD   = { k : v.X for k,v in SCD.items() }
     vals_opt   = { k : v.X for k,v in opt.items() }
     return {'R':vals_repo , 'I' : vals_inve ,'Q' : vals_venta , 'SCD' : vals_SCD ,'opt' : vals_opt}
+    #return {'R':vals_repo , 'I' : vals_inve ,'Q' : vals_venta ,'opt' : vals_opt}
 
 def ModeloVariasVentanas1semana(Tt ,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol):
     #tiempo total en semanas
@@ -229,7 +230,8 @@ def ModeloVariasVentanas1semana(Tt ,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)
     GRB_SCD = {}
     GRB_opt = {}
     for sem in TT:
-        #print(T)
+        print(sem)
+        print(SCD0)
         vals    = ModeloRepoGRB1semana(SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol ,sem)
         #actualizo valores
         SCD0    = {i : vals['SCD'][i] for i in SKU}
@@ -336,18 +338,20 @@ def plotOcupaTienda(M,I0,Tcap,tienda):
     bar_width = 0.8
     y_offset = np.zeros(Nsemanas+1)
     x = np.arange(Nsemanas+1)
-    fig, ax = plt.subplots(figsize = (6,2.5))
+    fig, ax = plt.subplots(figsize = (6,3))
     #ploteo barras
     for i in range(Nsku):
         #print(inve[i])
         y =  (repo[i] + inve[i]) / Tcap[tienda]
-        ax.bar(x, y, bar_width, bottom=y_offset,alpha = 0.5, color=color[i],label = f'SKU {i+1}')
+        ax.bar(x, y, bar_width, bottom=y_offset,lw = 1.3,edgecolor='k',alpha = 0.5, color=color[i],label = f'SKU 0{i+1}')
         y_offset = y_offset + y
-    ax.set_title(f'Ocupacion de tienda {tienda+1} por semana, normalizada.')
+    ax.set_title(f'Ocupacion de tienda {tienda+1} por semana')
     ax.set_xlim(-0.5,Nsemanas+0.5)
+    ax.set_xlabel('Semana')
     ax.set_ylim(0,1.1)
     ax.xaxis.set_ticks([n for n in range(Nsemanas+1)])
     ax.legend()
+    #ax.legend(ncol = 1,loc='upper left', bbox_to_anchor=(1.0, 1.0))
     ax.grid(axis = 'both' ,color='gray', linestyle='--', linewidth=0.5)
     plt.show(block=False)
     fig.tight_layout()
@@ -361,16 +365,18 @@ def plotSCDhistorico(scd_model,SCD0):
     y_offset = np.zeros(Nsemanas)
     x = np.arange(Nsemanas)
 
-    fig, ax = plt.subplots(figsize = (6,2.5))
+    fig, ax = plt.subplots(figsize = (6,3))
     for i in range(Nsku):
         y =  (scd_model[i]) / SCD0[i+1]
-        ax.bar(x, y, bar_width, bottom=y_offset,alpha = 0.5, color=color[i],label = f'SKU {i+1}')
+        ax.bar(x, y, bar_width, bottom=y_offset,lw = 1.3,edgecolor='k',alpha = 0.5, color=color[i],label = f'SKU 0{i+1}')
         y_offset = y_offset + y
-    ax.set_title(f'Stock en Centro de Distribucion, normalizado.')
+    ax.set_title(f'Stock en Centro de Distribucion')
     ax.set_xlim(-0.5,Nsemanas-0.5)
+    ax.set_xlabel('Semana')
     ax.set_ylim(0,Nsku + 0.2)
     ax.xaxis.set_ticks([n for n in range(Nsemanas)])
     ax.legend()
+    #ax.legend(ncol = 1,loc='upper left', bbox_to_anchor=(1.0, 1.0))
     ax.grid(axis = 'both' ,color='gray', linestyle='--', linewidth=0.5)
     plt.show(block=False)
     fig.tight_layout()
@@ -385,25 +391,28 @@ def plotRepoTransporte(Mrepo, CapTr):
     bar_width = 0.8
     x = np.arange(1,Nsemanas+1)
     y_offset = np.zeros(Nsemanas)
-    fig, ax = plt.subplots(figsize = (6,2.5))
+    fig, ax = plt.subplots(figsize = (7.5,4))
 
-    ax.fill_between([0,Nsemanas+1],0,1,facecolor='green', alpha=0.3)
+    ax.fill_between([0,Nsemanas+1],0,1,facecolor='green', alpha=0.3, label = 'Capacidad de transporte')
     for i in range(Nsku):
         for j in range(Ntiendas):
             y = Mrepo[i,j] / CapTr
-            ax.bar(x, y, bar_width, bottom=y_offset,alpha = 0.5, color=color[i,j],label = f'SKU {i+1} en tienda {j+1}')
+            ax.bar(x, y, bar_width, bottom=y_offset,lw = 1.3,edgecolor='k',alpha = 0.5, color=color[i,j],label = f'SKU 0{i+1} en tienda 0{j+1}')
             y_offset = y_offset + y
 
-    ax.set_title('Reposiciones por semana, normalizadas a la capacidad de transporte')
+    ax.set_title('Reposiciones por semana')
     ax.set_ylim(0,1.1)
+    ax.set_xlabel('Semana')
     ax.set_xlim(0.5, Nsemanas + 0.5)
     ax.xaxis.set_ticks([n+1 for n in range(Nsemanas)])
-    ax.legend()
+    #ax.legend()
+    ax.legend(ncol = 3,loc='center left', bbox_to_anchor=(-0.01, -0.4))
+    #ax.legend(ncol = 1,loc='upper left', bbox_to_anchor=(1.0, 1.0))
     ax.grid(axis = 'both' ,color='gray', linestyle='--', linewidth=0.5)
     plt.show(block=False)
     fig.tight_layout()
 
-def plotRepoQuiebres(M, I0, F,vT, tienda, sku):
+def plotRepoQuiebres(M, I0, F, RF, vT, tienda, sku,std):
     tienda  = tienda - 1
     sku     = sku - 1
     repo    = M[0 ,sku,tienda]
@@ -414,7 +423,8 @@ def plotRepoQuiebres(M, I0, F,vT, tienda, sku):
     I0      = I0[sku,tienda]
     inve    = np.append([I0], inve[:-1])
     #grafico
-    fig, ax = plt.subplots(figsize = (6.5,3))
+    #fig, ax = plt.subplots(figsize = (6.5,3))
+    fig, ax = plt.subplots(figsize = (7.2,2.7))
     x_offset= 0.24
     x       = np.arange(1,Nsemanas+1)
     xfill     = np.copy(x)
@@ -422,21 +432,23 @@ def plotRepoQuiebres(M, I0, F,vT, tienda, sku):
     xfill[-1] = x[-1] + 1
     bar_width = 0.45
     D = [F[sku +1, tienda +1][t] for t in range(1,Nsemanas+1)]
+    RD= [RF[sku +1, tienda +1][t] for t in range(1,Nsemanas+1)]
     #D = F[sku + 1, tienda + 1].values()
     max   = np.max([np.max(repo+inve),np.max(D)])
+    #max   = max * 0 + 1
 
     #r_bar_he = np.mean([maxinv,np.mean(D)])
     r_bar_he = 0.45
     x_rbar   = np.arange(Nsemanas-vT,Nsemanas+1) +0.5
     #print(inve)
 
-    ax.fill_between(xfill,D/max,1.2,facecolor='g', alpha=0.4,label = 'Sobredemanda')
+    ax.fill_between(xfill,D/max,1.5,facecolor='g', alpha=0.3,label = 'Sobredemanda')
     ax.fill_between(x_rbar,0.45,0.55,facecolor='red', alpha=0.6,label = 'Ventana opt.')
-    ax.bar(x - x_offset, inve/max, bar_width, color='gray',alpha = 0.5,label = 'Inventario')
-    ax.bar(x - x_offset, repo/max, bar_width, bottom=inve, color='blue',alpha = 0.5,label = 'Reposicion')
-    ax.bar(x + x_offset, Q/max, bar_width, color='orange',alpha = 0.5,label = 'Demanda ajustada')
+    ax.bar(x - x_offset, inve/max, bar_width, lw = 1.3,edgecolor='k',color='gray',alpha = 0.5,label = 'Inventario')
+    ax.bar(x - x_offset, repo/max, bar_width, lw = 1.3,edgecolor='k',bottom=inve/max, color='blue',alpha = 0.5,label = 'Reposicion')
+    ax.bar(x + x_offset, Q/max, bar_width, lw = 1.3,edgecolor='k',color='orange',alpha = 0.5,label = 'Demanda ajustada')
+    ax.plot(x,RD/max,color='darkgreen', lw = 2,alpha=0.8,label = f'Forecast Ruido {std}')
     #print(opt)
-
     for t in range(Nsemanas):
         if opt[t] == 0:
             ytext = ((inve[t]+repo[t])/max)
@@ -444,11 +456,13 @@ def plotRepoQuiebres(M, I0, F,vT, tienda, sku):
             #print(xtext,ytext)
             ax.annotate('x',xy=(xtext, ytext), xycoords='data',fontsize=15,color = 'red',weight = 'bold')
 
-    ax.set_title(f'Optimizacion 20/8 semanas.SKU {sku + 1}, tienda {tienda+1}. Normalizado')
+    ax.set_title(f'SKU: 0{sku + 1} Tienda: 0{tienda+1}.')
     ax.set_xlim(0.5,Nsemanas+0.5)
-    ax.set_ylim(0,1.1)
+    ax.set_xlabel('Semana')
+    ax.set_ylim(0,1.3)
     ax.xaxis.set_ticks([n for n in range(1,Nsemanas+1)])
-    ax.legend(ncol = 3,loc='center left', bbox_to_anchor=(0.05, -0.3))
+    #ax.legend(ncol = 3,loc='center left', bbox_to_anchor=(0.01, -0.3))
+    ax.legend(ncol = 1,loc='upper left', bbox_to_anchor=(1.0, 1.0))
     ax.grid(axis = 'both' ,color='gray', linestyle='--', linewidth=0.5)
     plt.show(block=False)
     fig.tight_layout()
@@ -459,15 +473,112 @@ def Ganancias(Q, P, C, SKU, Ts, Nsemanas):
     Ventas = Q[:,:,:Nsemanas]
     print(Ventas.shape)
     GSemanal = np.zeros(Nsemanas)
+    CSemanal = np.zeros(Nsemanas)
     for t in T:
         G = [(Q[i-1,j-1,t-1] * (P[i,j][t] - C[i,j][t])) for i,j in comb]
+        CS= [Q[i-1,j-1,t-1]  for i,j in comb]
         GSemanal[t-1] = np.sum(G)
-    return GSemanal.astype(np.int32)
+        CSemanal[t-1] = np.sum(CS)
+    return [GSemanal.astype(np.int32),CSemanal.astype(np.int32)]
 
-def plotResumen4(M, I0, F,vT, SKU, Ts):
+def plotResumen4(M, I0, F,Rf,vT, SKU, Ts,std=0.0):
     for i in SKU:
         for j in Ts:
-            plotRepoQuiebres(Mvals, Minv, F, vT, j, i)
+            plotRepoQuiebres(Mvals, Minv, F,RF, vT, j, i,std)
+
+def RuidoGRB(Tt ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol, std):
+    '''
+    Cuento los quiebres de stock producidos por agregar ruido a la Demanda
+    tambie la ganancia en ventas
+    '''
+    np.random.seed(32)
+    iAux    = I0.copy()
+    #tiempo total en semanas
+    TT = [ t+1 for t in range(Tt)]
+
+    GRB_repo = {}
+    GRB_inve = {}
+    GRB_venta = {}
+    GRB_SCD = {}
+    GRB_opt = {}
+    Mruido  = np.random.normal(0, std, size = (len(SKU),len(Ts),Tt - vT + 1))
+    #print(Mruido)
+
+    for sem in TT[:-(vT)+1]:
+        T       = np.arange(sem,sem+vT)
+        #scdAux  = SCD0.copy()
+        vals    = ModeloRepoGRB(SKU ,Ts ,T ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol ,sem)
+        #actualizo valores
+        SCD0    = {i : vals['SCD'][i,sem] for i in SKU}
+        I0      = {(i,j) : vals['I'][i,j,sem] for i in SKU for j in Ts}
+
+        #guardo resultados(semana,i,j)
+        GRB_repo[sem]   = {(i,j) : vals['R'][i,j,sem] for i in SKU for j in Ts}
+        GRB_venta[sem]  = {(i,j) : vals['Q'][i,j,sem] for i in SKU for j in Ts}
+        GRB_opt[sem]    = {(i,j) : vals['opt'][i,j,sem] for i in SKU for j in Ts}
+        GRB_SCD[sem]    = SCD0
+        GRB_inve[sem]   = I0
+
+        #corrijo por error en forecast (ruido)
+        for i in SKU:
+            for j in Ts:
+                RuidoF = round(Mruido[i-1,j-1,sem-1] * F[i,j][sem])
+                #ruido no puede superar el forecast negativamente
+                RuidoF = max(2 - F[i,j][sem], RuidoF)
+                if sem == 1:
+                    errRepo = abs(iAux[i,j] + GRB_repo[sem][i,j] - F[i,j][sem])
+                else:
+                    errRepo = abs(GRB_inve[sem-1][i,j] + GRB_repo[sem][i,j] - F[i,j][sem])
+                #ya habia cumplido la demanda
+                if GRB_opt[sem][i,j] == 1:
+                    if RuidoF > errRepo:
+                        #print(f'{GRB_inve[sem-1][i,j] + GRB_repo[sem][i,j]},{F[i,j][sem]},H')
+                        #print(f'{i},{j},{sem},H')
+                        GRB_opt[sem][i,j]   = 0
+                        GRB_venta[sem][i,j] = GRB_inve[sem-1][i,j] + GRB_repo[sem][i,j]
+                        GRB_inve[sem][i,j]  = 0
+                    elif RuidoF > 0:
+                        #print(f'{i},{j},{sem},O')
+                        GRB_venta[sem][i,j] = F[i,j][sem] + RuidoF
+                        GRB_inve[sem][i,j]  = GRB_inve[sem][i,j] - RuidoF
+                        GRB_inve[sem][i,j]  = errRepo - RuidoF
+                    #elif RuidoF < 0:
+                    else:
+                        #print(f'{i},{j},{sem},L')
+                        #print(f'{GRB_venta[sem][i,j]},{RuidoF},H')
+                        GRB_venta[sem][i,j] = GRB_venta[sem][i,j] + RuidoF
+                        GRB_inve[sem][i,j]  = GRB_inve[sem][i,j] - RuidoF
+                        #print(f'{GRB_venta[sem][i,j]},{RuidoF},H')
+                elif RuidoF < (-errRepo):
+                    Qnuevo = F[i,j][sem] + RuidoF
+                    GRB_opt[sem][i,j]   = 1
+                    GRB_inve[sem][i,j]  = GRB_venta[sem][i,j] - Qnuevo
+                    GRB_venta[sem][i,j] = Qnuevo
+                    #print(f'{i},{j},{sem},A')
+                else:
+                    #print(GRB_opt[sem][i,j])
+                    print(f'{i},{j},{sem},S')
+                    #print(GRB_opt[sem][i,j])
+                Mruido[i-1,j-1,sem-1] = RuidoF
+
+    for sem in T[1:]:
+        GRB_repo[sem]   = {(i,j) : vals['R'][i,j,sem] for i in SKU for j in Ts}
+        GRB_venta[sem]  = {(i,j) : vals['Q'][i,j,sem] for i in SKU for j in Ts}
+        GRB_opt[sem]    = {(i,j) : vals['opt'][i,j,sem] for i in SKU for j in Ts}
+        GRB_SCD[sem]    = {i : vals['SCD'][i,sem] for i in SKU}
+        GRB_inve[sem]   = {(i,j) : vals['I'][i,j,sem] for i in SKU for j in Ts}
+    return {'repo':GRB_repo ,'inventario': GRB_inve, 'SCD':  GRB_SCD, 'opt' :GRB_opt , 'venta': GRB_venta, 'Ruido': Mruido}
+
+def curvaForcastRuido(MR,F,SKU,Ts):
+    r,c,Ttotal = MR.shape
+    Ndict = {}
+    for i in SKU:
+        for j in Ts:
+            N = F[i,j].copy()
+            for t in range(1,Ttotal + 1):
+                N[t] = F[i,j][t] + MR[i-1,j-1,t-1]
+            Ndict[i,j] = N
+    return Ndict
 
 '''
 *****************************************************
@@ -481,7 +592,7 @@ def plotResumen4(M, I0, F,vT, SKU, Ts):
 fracciones  = np.array([1.0 ,0.8 ,0.7 ,0.5 ,0.3])
 semanas     = np.array([6 ,3 ,3 ,3 ,5])
 Mprecios    = np.array([[2990 ,3990],
-                        [10990 ,10990]])
+                        [11990 ,10990]])
 
 #costos
 Mcostos     = Mprecios * 0.3
@@ -496,8 +607,9 @@ Mme         = np.array([[100 ,50 ],
 #demanda
 #Mdemanda    = np.array([[300 ,300 ],
 #                        [150 ,100]])
-Mdemanda    = np.array([[500 ,50 ],
-                        [15 ,100]])
+Mdemanda    = np.array([[200 ,250 ],
+                        [150 ,100]])
+#Mme         = Mdemanda
 Npeak       = 8
 tamano      = 4
 
@@ -506,7 +618,7 @@ capacidad   = 2000
 #capacidad   = np.sum(Mme) + 1500
 
 #stock conjunto maximo en tiendas
-Lcapacidad  = np.array([1000, 800])
+Lcapacidad  = np.array([1000, 800])#*2
 
 #inventario inicial periodo cero
 Minv        = np.array([[0 ,0 ],
@@ -514,8 +626,8 @@ Minv        = np.array([[0 ,0 ],
 #Minv        = Mme
 
 #stock en centro de distribucion
-SCD0 =  {1:1000,
-         2:12000}
+SCD0 =  {1:10000,
+         2:10000}
 
 #obtengo curvas para utilizar
 P       = CurvaPrecio(Mprecios ,fracciones ,semanas)
@@ -529,8 +641,7 @@ B       = StockTiendas(Lcapacidad ,Nsemanas)
 #tiendas y skus
 SKU = [1 ,2]
 Ts  = [1 ,2]
-#parametros temporales, ventana de tiempo
-vT  = 2
+
 
 Fvol = {i:1 for i in SKU}
 #parametros auxiliares
@@ -541,20 +652,33 @@ Fvol = {i:1 for i in SKU}
 *****************************************************
 '''
 t1 = time.time()
-#output_vals = ModeloVariasVentanas(Nsemanas ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)
-output_vals = ModeloVariasVentanas1semana(Nsemanas ,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)
+#parametros temporales, ventana de tiempo
+vT  = 1
+STD = 0.4
+STD = 0.0
+#output_vals = ModeloVariasVentanas(Nsemanas ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)       #modelo sin ruido, tamano de ventana modificable
+output_vals = ModeloVariasVentanas1semana(Nsemanas ,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)   #modelo sin ruido, tamano de ventana 1
+#output_vals =RuidoGRB(Nsemanas ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol, STD)                #modelo con ruido ruido gausiano, std seteable
+
+
 Mvals, scd_model, ocupado_tiendas = obtenerCurvas(output_vals, SKU, Ts, Nsemanas, SCD0, Minv)
-RepartidoT = Mvals[0]
-Transportado = np.sum(np.sum(RepartidoT,axis = 0),axis=0)
+#RepartidoT = Mvals[0]
+#Transportado = np.sum(np.sum(RepartidoT,axis = 0),axis=0)
 t2 = time.time()
 print('tiempo de ejecucion: ',round(t2-t1,2))
-#ganancias
+'''
+*****************************************************
+                    Ganancias
+*****************************************************
+'''
 #NGsemanales = Nsemanas - vT
 NGsemanales = 12
-GS = Ganancias(Mvals[2], P, C, SKU, Ts, NGsemanales)#ganancia semanal
+GS, CS = Ganancias(Mvals[2], P, C, SKU, Ts, NGsemanales)#ganancia semanal
 G = int(np.sum(GS))#ganancia total en el periodo de Nsemanas
+CT= int(np.sum(CS))
 print(GS)
 print(G)
+print(CT)
 '''
 *****************************************************
                     Graficos
@@ -565,10 +689,12 @@ plotOcupaTienda(Mvals,Minv,Lcapacidad,tienda)
 tienda = 2
 plotOcupaTienda(Mvals,Minv,Lcapacidad,tienda)
 plotSCDhistorico(scd_model,SCD0)
-plotRepoTransporte(Mvals[0], capacidad)
-#sku = 2
-#plotRepoQuiebres(Mvals, Minv, F, vT, tienda, sku)
-plotResumen4(Mvals, Minv, F,vT, SKU, Ts)
+#plotRepoTransporte(Mvals[0], capacidad)
+sku = 2
+RF = F
+#RF = curvaForcastRuido(output_vals['Ruido'],F,SKU,Ts) #forecast con ruido
+#plotRepoQuiebres(Mvals, Minv,  F,RF, vT, tienda, sku,STD)
+plotResumen4(Mvals, Minv, F,RF,vT, SKU, Ts,STD)
 '''
 *****************************************************
                     Fin

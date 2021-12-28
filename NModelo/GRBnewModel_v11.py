@@ -578,7 +578,7 @@ def curvaForcastRuido(MR,F,SKU,Ts):
 fracciones  = np.array([1.0 ,0.8 ,0.7 ,0.5 ,0.3])
 semanas     = np.array([6 ,3 ,3 ,3 ,5])
 Mprecios    = np.array([[2990 ,3990],
-                        [10990 ,10990]])
+                        [11990 ,10990]])
 
 #costos
 Mcostos     = Mprecios * 0.3
@@ -593,17 +593,18 @@ Mme         = np.array([[100 ,50 ],
 #demanda
 #Mdemanda    = np.array([[300 ,300 ],
 #                        [150 ,100]])
-Mdemanda    = np.array([[500 ,300 ],
+Mdemanda    = np.array([[200 ,250 ],
                         [150 ,100]])
+Mme         = Mdemanda
 Npeak       = 8
 tamano      = 4
 
 #trasporte
-capacidad   = 15000
+capacidad   = 2000
 #capacidad   = np.sum(Mme) + 1500
 
 #stock conjunto maximo en tiendas
-Lcapacidad  = np.array([1000, 800])*2
+Lcapacidad  = np.array([1000, 800])#*2
 
 #inventario inicial periodo cero
 Minv        = np.array([[0 ,0 ],
@@ -612,7 +613,7 @@ Minv        = np.array([[0 ,0 ],
 
 #stock en centro de distribucion
 SCD0 =  {1:10000,
-         2:12000}
+         2:10000}
 
 #obtengo curvas para utilizar
 P       = CurvaPrecio(Mprecios ,fracciones ,semanas)
@@ -638,11 +639,11 @@ Fvol = {i:1 for i in SKU}
 '''
 t1 = time.time()
 #parametros temporales, ventana de tiempo
-vT  = 1
+vT  = 8
 STD = 0.4
 STD = 0.0
-#output_vals = ModeloVariasVentanas(Nsemanas ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)       #modelo sin ruido, tamano de ventana modificable
-output_vals = ModeloVariasVentanas1semana(Nsemanas ,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)   #modelo sin ruido, tamano de ventana 1
+output_vals = ModeloVariasVentanas(Nsemanas ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)       #modelo sin ruido, tamano de ventana modificable
+#output_vals = ModeloVariasVentanas1semana(Nsemanas ,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)   #modelo sin ruido, tamano de ventana 1
 #output_vals =RuidoGRB(Nsemanas ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol, STD)                #modelo con ruido ruido gausiano, std seteable
 
 
@@ -668,11 +669,11 @@ print(G)
 *****************************************************
 '''
 tienda = 1
-#plotOcupaTienda(Mvals,Minv,Lcapacidad,tienda)
+plotOcupaTienda(Mvals,Minv,Lcapacidad,tienda)
 tienda = 2
-#plotOcupaTienda(Mvals,Minv,Lcapacidad,tienda)
-#plotSCDhistorico(scd_model,SCD0)
-#plotRepoTransporte(Mvals[0], capacidad)
+plotOcupaTienda(Mvals,Minv,Lcapacidad,tienda)
+plotSCDhistorico(scd_model,SCD0)
+plotRepoTransporte(Mvals[0], capacidad)
 #sku = 2
 #plotRepoQuiebres(Mvals, Minv, F, vT, tienda, sku)
 RF = F
