@@ -500,6 +500,7 @@ def RuidoGRB(Tt ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol, std):
 
     for sem in TT[:-(vT)+1]:
         T       = np.arange(sem,sem+vT)
+        print(T)
         #scdAux  = SCD0.copy()
         vals    = ModeloRepoGRB(SKU ,Ts ,T ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol ,sem)
         #actualizo valores
@@ -516,7 +517,7 @@ def RuidoGRB(Tt ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol, std):
         #corrijo por error en forecast (ruido)
         for i in SKU:
             for j in Ts:
-                RuidoF = round(Mruido[i-1,j-1,sem-1] * F[i,j][sem])
+                RuidoF = round(Mruido[i-1,j-1,sem-1] * F[i,j][1])
                 #ruido no puede superar el forecast negativamente
                 RuidoF = max(2 - F[i,j][sem], RuidoF)
                 if sem == 1:
@@ -573,6 +574,128 @@ def curvaForcastRuido(MR,F,SKU,Ts):
                 N[t] = F[i,j][t] + MR[i-1,j-1,t-1]
             Ndict[i,j] = N
     return Ndict
+
+def TodaslasCurvas(Mvals, Minv, F,RF,vT, SKU, Ts, STD,capacidad,scd_model,SCD0,Lcapacidad):
+    fig, axs = plt.subplots(nrows = 4, ncols = 2,figsize = (9.2,9.5))
+    st_color = [['orangered','orange'],
+                ['blue','teal']]
+    f_color  = ['green','black']
+
+    s_color   = ['lightcoral','deepskyblue']
+    extra_color = ['purple','black','seagreen','lightcoral','red','c','g','pink','slategrey','mintcream']
+    #axs = axs.flat
+    #print(axs)
+    Nsemanas= len(Mvals[0,0,0])
+    y_offset_tr = np.zeros(Nsemanas)
+
+    for tienda in Ts:
+        tienda_1    = tienda - 1
+        axt         = axs[2,tienda_1]
+        y_offset    = np.zeros(Nsemanas)
+        y_offset_scd= np.zeros(Nsemanas)
+
+        for sku in SKU:
+            sku_1     = sku - 1
+
+            Nsemanas= len(Mvals[0,0,0])
+
+            ax      = axs[sku_1,tienda_1]
+            repo    = Mvals[0 ,sku_1,tienda_1]
+            inve    = Mvals[1 ,sku_1,tienda_1]
+            #Q       = M[2 ,sku,tienda]
+            opt     = Mvals[3 ,sku_1,tienda_1]
+            I0      = Minv[sku_1,tienda_1]
+            inve    = np.append([I0], inve[:-1])
+            D       = [ F[sku, tienda][t] for t in range(1,Nsemanas+1)]
+            RD      = [RF[sku, tienda][t] for t in range(1,Nsemanas+1)]
+
+            x           = np.arange(1,Nsemanas+1)
+            bar_width   = 0.9
+            x_rbar      = np.arange(Nsemanas-vT,Nsemanas+1) +0.5
+            x_rbar      = np.arange(0,Nsemanas+2)
+            Xmarker     = repo + inve
+            Xzero       = opt==1
+            Xmarker[Xzero] = np.zeros(np.sum(Xzero)) - 200000
+
+            max = np.max(D)
+            ax.fill_between(x_rbar,0.0,2.0,facecolor=extra_color[-1], alpha=0.5)#,label = 'Ventana última iteración')
+
+            ax.bar(x, inve/max, bar_width,lw = 3,edgecolor='white',color=st_color[sku_1][tienda_1],alpha = 0.4)#,label = 'Inventario')
+            ax.bar(x, repo/max, bar_width,lw = 3,edgecolor='white',color=st_color[sku_1][tienda_1],alpha = 0.8,bottom=inve/max,label = f'Stock SKU:0{sku} Tienda:0{tienda}')
+
+            text = [['(a)','(b)'],
+                    ['(c)','(d)'],
+                    ['(e)','(f)'],
+                    ['(g)','(h)']]
+
+            ax.annotate(text[sku_1][tienda_1],xy=(0.93,1.05), xycoords='axes fraction',fontsize=12,color = 'black')#,weight = 'bold')
+
+            ax.set_title(f'Stock SKU: 0{sku} Tienda: 0{tienda}',fontsize = 10)
+            ax.set_xlim(0.5,Nsemanas+0.5)
+            axt.set_xlim(0.5,Nsemanas+0.5)
+            ax.set_xlabel('Semana',fontsize = 9)
+            ax.set_ylabel('Indice de Demanda',fontsize = 9)
+            ax.set_ylim(0,2)
+            xticks = ['1','','3','','5','','7','','9','','11','','13','','15','','17','','19','']
+            xticks = [1,3,5,7,9,11,13,15,17,19]
+            ax.xaxis.set_ticks(xticks)
+            axt.xaxis.set_ticks(xticks)
+            axt.set_ylim(0,1.3)
+            #ax.set_xlim(0.5,13+0.5)
+            #ax.grid(axis = 'both' ,color='gray', linestyle='--', linewidth=0.5,which='both')
+            if sku==1 and tienda == 1:
+                ax.plot(x, D/max,color=extra_color[-2], ls = '--',lw = 2,alpha=1.0,label = 'Forecast')
+                ax.plot(x,RD/max,color=f_color[1], lw = 1,alpha=0.9,label = r'Forecast con $\sigma=$'+str(STD))
+                ax.plot(x, Xmarker/max,color=extra_color[4], ms = 8,ls = '',marker = "X",alpha=1.0,label = 'Quiebre de stock')
+            else:
+                ax.plot(x, D/max,color=extra_color[-2], ls = '--',lw = 2,alpha=1.0)
+                ax.plot(x,RD/max,color=f_color[1], lw = 1,alpha=0.9)
+                ax.plot(x, Xmarker/max,color=extra_color[4], ms = 8,ls = '',marker = "X",alpha=1.0)
+
+
+            y = (repo+inve)/Lcapacidad[tienda_1]
+            axt.bar(x, y, bar_width,lw = 3,edgecolor='white',color=st_color[sku_1][tienda_1],alpha = 0.6,bottom=y_offset)#,label = f'Stock SKU:0{sku} Tienda:0{tienda}')
+            axt.set_xlabel('Semana',fontsize = 9)
+            axt.set_ylabel('Indice de Ocupación',fontsize = 9)
+            axt.set_title(f'Ocupación Tienda: 0{tienda}',fontsize = 10)
+            axt.annotate(text[2][tienda_1],xy=(0.93,1.05), xycoords='axes fraction',fontsize=12,color = 'black')
+            y_offset = y_offset + y
+
+            #grafico transporte
+            axtr = axs[3,1]
+            yTr  = repo/capacidad
+            axtr.bar(x, yTr, bar_width,lw = 3,edgecolor='white',color=st_color[sku_1][tienda_1],alpha = 0.6,bottom=y_offset_tr)
+
+            axtr.set_ylim(0,1.3)
+            axtr.set_xlim(0.5,Nsemanas+0.5)
+            axtr.xaxis.set_ticks(xticks)
+            axtr.set_xlabel('Semana',fontsize = 9)
+            axtr.set_ylabel('Indice de Transporte',fontsize = 9)
+            axtr.set_title(f'Reposición semanal',fontsize = 10)
+            axtr.annotate(text[3][1],xy=(0.93,1.05), xycoords='axes fraction',fontsize=12,color = 'black')
+            y_offset_tr = y_offset_tr + yTr
+
+            #grafico scd
+
+            if tienda == 1:
+                axScd = axs[3,0]
+                yScd  = scd_model[sku_1,:-1]/SCD0[sku]
+                print(x.shape,yScd.shape)
+                axScd.bar(x, yScd, bar_width,lw = 3,edgecolor='white',color=s_color[sku_1],alpha = 0.6,bottom=y_offset_scd,label=f'Stock CD SKU 0{sku}')
+                axScd.set_ylim(0,2.3)
+                axScd.set_xlim(0.5,Nsemanas+0.5)
+                axScd.xaxis.set_ticks(xticks)
+                axScd.set_xlabel('Semana',fontsize = 9)
+                axScd.set_ylabel('Indice de Stock CD',fontsize = 9)
+                axScd.set_title(f'Stock en centro de distribución',fontsize = 10)
+                axScd.annotate(text[3][0],xy=(0.93,1.05), xycoords='axes fraction',fontsize=12,color = 'black')
+                y_offset_scd = y_offset_scd + yScd
+    axtr.plot(x, np.ones_like(x),color=extra_color[-3], ls = '--',lw = 2,alpha=1.0,label = 'Transporte máximo')
+    #fig.legend(bbox_to_anchor=[0.5, 0.02],loc='center', ncol=4)
+    fig.legend(loc='lower center', ncol=4)
+    #fig.legend(ncol = 4,loc='center left', bbox_to_anchor=(-0.01, -0.4))
+    plt.show(block=False)
+    fig.tight_layout()
 
 '''
 *****************************************************
@@ -666,7 +789,7 @@ print('tiempo de ejecucion: ',round(t2-t1,2))
 *****************************************************
 '''
 #NGsemanales = Nsemanas - vT
-NGsemanales = 12
+NGsemanales = 13
 GS, CS = Ganancias(Mvals[2], P, C, SKU, Ts, NGsemanales)#ganancia semanal
 G = int(np.sum(GS))#ganancia total en el periodo de Nsemanas
 CT= int(np.sum(CS))
@@ -678,17 +801,19 @@ print('Unidades vendidas: ', CT)
                     Graficos
 *****************************************************
 '''
-tienda = 1
-plotOcupaTienda(Mvals,Minv,Lcapacidad,tienda)
-tienda = 2
-plotOcupaTienda(Mvals,Minv,Lcapacidad,tienda)
-plotSCDhistorico(scd_model,SCD0)
-plotRepoTransporte(Mvals[0], capacidad)
-#sku = 2
-#plotRepoQuiebres(Mvals, Minv, F, vT, tienda, sku)
 #RF = F
 RF = curvaForcastRuido(output_vals['Ruido'],F,SKU,Ts) #forecast con ruido
-plotResumen4(Mvals, Minv, F,RF,vT, SKU, Ts,STD)
+TodaslasCurvas(Mvals, Minv, F,RF,vT, SKU, Ts, STD,capacidad,scd_model,SCD0,Lcapacidad)
+tienda = 1
+#plotOcupaTienda(Mvals,Minv,Lcapacidad,tienda)
+tienda = 2
+#plotOcupaTienda(Mvals,Minv,Lcapacidad,tienda)
+#plotSCDhistorico(scd_model,SCD0)
+#plotRepoTransporte(Mvals[0], capacidad)
+#sku = 2
+#plotRepoQuiebres(Mvals, Minv, F, vT, tienda, sku)
+
+#plotResumen4(Mvals, Minv, F,RF,vT, SKU, Ts,STD)
 '''
 *****************************************************
                     Fin

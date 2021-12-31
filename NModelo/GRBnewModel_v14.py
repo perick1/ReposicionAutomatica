@@ -167,7 +167,7 @@ def ModeloRepoGRB1semana(SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B  ,Fvol ,semana):
     opt = model.addVars(comb ,vtype=GRB.BINARY ,name='opt')
     #funcion objetivo
 
-    Gz1 = 0 #precio
+    Gz1 = 1 #precio
     Gz2 = 1 #solo cantidad
 
     Gb1 = 1 #beneficio por evitar quiebres
@@ -363,8 +363,8 @@ def Ganancias(Q, P, C, SKU, Ts, Nsemanas):
 def ParametrosGrandes_ij(Nsku,Ntiendas):
     np.random.seed(32)
     Mprecios    = np.random.randint(low = 5,high = 10, size=(Nsku,Ntiendas))
-    Mme         = np.random.randint(low = 10,high = 100, size=(Nsku,Ntiendas))
-    Mdemanda    = np.random.randint(low = 50,high = 500, size=(Nsku,Ntiendas))
+    Mme         = np.random.randint(low = 40,high = 100, size=(Nsku,Ntiendas))
+    Mdemanda    = np.random.randint(low = 100,high = 250, size=(Nsku,Ntiendas))
     Minv        = np.random.randint(low = 10,high = 50, size=(Nsku,Ntiendas))
     Mcostos     = Mprecios * 0.3
 
@@ -394,8 +394,8 @@ vT  = 8
 Npeak       = 8
 tamano      = 4
 #stock en centro de distribucion
-Nsku        = 1000
-Ntiendas    = 50
+Nsku        = 10
+Ntiendas    = 10
 Mprecios, Mcostos, Mme, Mdemanda, Lcapacidad, Minv, SCD0, Fvol, SKU, Ts,capacidad = ParametrosGrandes_ij(Nsku,Ntiendas)
 #obtengo curvas para utilizar
 P       = CurvaPrecio(Mprecios ,fracciones ,semanas)
@@ -410,12 +410,12 @@ B       = StockTiendas(Lcapacidad ,Nsemanas)
                     Optimizacion
 *****************************************************
 '''
-t1 = time.time()
+#t1 = time.time()
 output_vals = ModeloVariasVentanas(Nsemanas ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)       #modelo sin ruido, tamano de ventana modificable
 #output_vals = ModeloVariasVentanas1semana(Nsemanas ,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)   #modelo sin ruido, tamano de ventana 1
-t2 = time.time()
-print('tiempo de ejecucion: ',round(t2-t1,2))
-Mvals, scd_model, ocupado_tiendas = obtenerCurvas(output_vals, SKU, Ts, Nsemanas, SCD0, Minv)
+#t2 = time.time()
+#print('tiempo de ejecucion: ',round(t2-t1,2))
+#Mvals, scd_model, ocupado_tiendas = obtenerCurvas(output_vals, SKU, Ts, Nsemanas, SCD0, Minv)
 #RepartidoT = Mvals[0]
 #Transportado = np.sum(np.sum(RepartidoT,axis = 0),axis=0)
 '''
@@ -424,15 +424,19 @@ Mvals, scd_model, ocupado_tiendas = obtenerCurvas(output_vals, SKU, Ts, Nsemanas
 *****************************************************
 '''
 #NGsemanales = Nsemanas - vT
-NGsemanales = 12
-GS, CS = Ganancias(Mvals[2], P, C, SKU, Ts, NGsemanales)#ganancia semanal
-G = int(np.sum(GS))#ganancia total en el periodo de Nsemanas
-CT= int(np.sum(CS))
+#NGsemanales = 13
+#GS, CS = Ganancias(Mvals[2], P, C, SKU, Ts, NGsemanales)#ganancia semanal
+#G = int(np.sum(GS))#ganancia total en el periodo de Nsemanas
+#CT= int(np.sum(CS))
 #print(GS)
-print('ganancia: ',G)
-print('cantidad: ',CT)
+#print('ganancia: ',G)
+#print('cantidad: ',CT)
 '''
 *****************************************************
-                    Fin
+                    Quiebres
 *****************************************************
 '''
+#qui = Mvals[3,:,:,:13]
+#quiebres = 1300 - np.sum(qui)
+
+#print('N quiebres: ',quiebres)

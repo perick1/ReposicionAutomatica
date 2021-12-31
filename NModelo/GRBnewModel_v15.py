@@ -100,7 +100,7 @@ def ModeloRepoGRB(SKU ,Ts ,T ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B  ,Fvol ,semana):
     opt = model.addVars(comb ,vtype=GRB.BINARY ,name='opt')
     #funcion objetivo
 
-    Gz1 = 1 #precio
+    Gz1 = 0 #precio
     Gz2 = 1 #solo cantidad
 
     Gb1 = 1 #beneficio por evitar quiebres
@@ -653,12 +653,12 @@ Fvol = {i:1 for i in SKU}
 '''
 t1 = time.time()
 #parametros temporales, ventana de tiempo
-vT  = 1
+vT  = 8
 STD = 0.4
 STD = 0.0
 #output_vals = ModeloVariasVentanas(Nsemanas ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)       #modelo sin ruido, tamano de ventana modificable
-output_vals = ModeloVariasVentanas1semana(Nsemanas ,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)   #modelo sin ruido, tamano de ventana 1
-#output_vals =RuidoGRB(Nsemanas ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol, STD)                #modelo con ruido ruido gausiano, std seteable
+#output_vals = ModeloVariasVentanas1semana(Nsemanas ,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)   #modelo sin ruido, tamano de ventana 1
+output_vals =RuidoGRB(Nsemanas ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol, STD)                #modelo con ruido ruido gausiano, std seteable
 
 
 Mvals, scd_model, ocupado_tiendas = obtenerCurvas(output_vals, SKU, Ts, Nsemanas, SCD0, Minv)
@@ -676,19 +676,19 @@ NGsemanales = 12
 GS, CS = Ganancias(Mvals[2], P, C, SKU, Ts, NGsemanales)#ganancia semanal
 G = int(np.sum(GS))#ganancia total en el periodo de Nsemanas
 CT= int(np.sum(CS))
-print(GS)
-print(G)
-print(CT)
+#print(GS)
+print('Ganancias: ', G)
+print('Unidades vendidas: ', CT)
 '''
 *****************************************************
                     Graficos
 *****************************************************
 '''
 tienda = 1
-plotOcupaTienda(Mvals,Minv,Lcapacidad,tienda)
+#plotOcupaTienda(Mvals,Minv,Lcapacidad,tienda)
 tienda = 2
-plotOcupaTienda(Mvals,Minv,Lcapacidad,tienda)
-plotSCDhistorico(scd_model,SCD0)
+#plotOcupaTienda(Mvals,Minv,Lcapacidad,tienda)
+#plotSCDhistorico(scd_model,SCD0)
 #plotRepoTransporte(Mvals[0], capacidad)
 sku = 2
 RF = F
