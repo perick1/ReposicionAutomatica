@@ -626,7 +626,7 @@ B       = StockTiendas(Lcapacidad ,Nsemanas)
 t1 = time.time()
 #parametros temporales, ventana de tiempo
 vT  = 8
-STD = 0.4
+STD = 0.5
 #STD = 0.0
 #output_vals = ModeloVariasVentanas(Nsemanas ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)       #modelo sin ruido, tamano de ventana modificable
 #output_vals = ModeloVariasVentanas1semana(Nsemanas ,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)   #modelo sin ruido, tamano de ventana 1

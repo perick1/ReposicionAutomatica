@@ -713,8 +713,7 @@ Mprecios    = np.array([[2990 ,3990],
 
 #costos
 Mcostos     = Mprecios * 0.3
-#Mcostos     = np.array([[2990 ,3990],
-#                        [10990 ,10990]])
+
 Nsemanas    = np.sum(semanas)
 
 #minimo exhibicion
@@ -722,20 +721,19 @@ Mme         = np.array([[100 ,50 ],
                         [50  ,40 ]])
 
 #demanda
-#Mdemanda    = np.array([[300 ,300 ],
-#                        [150 ,100]])
+
 Mdemanda    = np.array([[200 ,250 ],
                         [150 ,100]])
-#Mme         = Mdemanda
+
 Npeak       = 8
 tamano      = 4
 
 #trasporte
-capacidad   = 2000
+capacidad   = 2000*0.3
 #capacidad   = np.sum(Mme) + 1500
 
 #stock conjunto maximo en tiendas
-Lcapacidad  = np.array([1000, 800])#*2
+Lcapacidad  = np.array([1000, 800])*1
 
 #inventario inicial periodo cero
 Minv        = np.array([[0 ,0 ],
@@ -772,10 +770,10 @@ t1 = time.time()
 #parametros temporales, ventana de tiempo
 vT  = 8
 STD = 0.6
-#STD = 0.0
-#output_vals = ModeloVariasVentanas(Nsemanas ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)       #modelo sin ruido, tamano de ventana modificable
+STD = 0.0
+output_vals = ModeloVariasVentanas(Nsemanas ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)       #modelo sin ruido, tamano de ventana modificable
 #output_vals = ModeloVariasVentanas1semana(Nsemanas ,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)   #modelo sin ruido, tamano de ventana 1
-output_vals =RuidoGRB(Nsemanas ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol, STD)                #modelo con ruido ruido gausiano, std seteable
+#output_vals =RuidoGRB(Nsemanas ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol, STD)                #modelo con ruido ruido gausiano, std seteable
 
 
 Mvals, scd_model, ocupado_tiendas = obtenerCurvas(output_vals, SKU, Ts, Nsemanas, SCD0, Minv)
@@ -801,8 +799,8 @@ print('Unidades vendidas: ', CT)
                     Graficos
 *****************************************************
 '''
-#RF = F
-RF = curvaForcastRuido(output_vals['Ruido'],F,SKU,Ts) #forecast con ruido
+RF = F
+#RF = curvaForcastRuido(output_vals['Ruido'],F,SKU,Ts) #forecast con ruido
 TodaslasCurvas(Mvals, Minv, F,RF,vT, SKU, Ts, STD,capacidad,scd_model,SCD0,Lcapacidad)
 tienda = 1
 #plotOcupaTienda(Mvals,Minv,Lcapacidad,tienda)
