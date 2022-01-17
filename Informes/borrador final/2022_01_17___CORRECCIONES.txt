@@ -1,0 +1,33 @@
+Ortografía:
+	- palabras en ingles se dejan italicas
+	- nombres propios como Python, con mayuscula pero no italica
+	- bibliotecas de python en texttt
+
+Introducción:
+	- Se agregan referencias y datos de sobrestock y quiebres de stock
+	- Se reformulan párrafos y palabras repetitivas
+
+Marco teórico:
+	- Se añaden referencias
+	- Se reformulan párrafos en estado del arte proncipalmente
+	- Se añade una ilustración, un diagrama de bloques y logos de gurobi y COIN OR (con citas)
+
+Metodología:
+	- Se habla de semilla en herramientas computacionales numpy.random.seed(32)
+
+Desarrollo:
+	- Se añaden curvas de ejemplo de forecast y precios
+	- Mayor explicación en el listado de parámetros
+	- Enumeración de índices (demanda, ocupación, etc), agregando ejemplos
+	- Añade ecuaciones de l cálculo de cada índice
+	- Se agrega sección de parametros particulares (tabla con valores de parametros para 2 SKUs y 2 tiendas)
+	- Ilustración con ejemplo de cómo se genera el calendario de reposición
+	- Se mejoran tablas y captions
+	- Gráfico de tiempo vs variables y restricciones mejorado, juntando curvas y poniendo zoom.
+
+Analisis:
+	- Se añaden ecuaciones explicitas de relación lineal entre #SKUs y # de variables
+Conclusiones:
+	- Más cuantitativas
+	- Parrafos más detallados con referencia a datos
+	- Se propone en trabajo futuro cuantificar la relacion de tiempo cómputo vs # variables

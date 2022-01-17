@@ -530,7 +530,10 @@ def RuidoGRB(Tt ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol, std):
                         #print(f'{GRB_inve[sem-1][i,j] + GRB_repo[sem][i,j]},{F[i,j][sem]},H')
                         #print(f'{i},{j},{sem},H')
                         GRB_opt[sem][i,j]   = 0
-                        GRB_venta[sem][i,j] = GRB_inve[sem-1][i,j] + GRB_repo[sem][i,j]
+                        if sem == 1:
+                            GRB_venta[sem][i,j] = I0[i,j] + GRB_repo[sem][i,j]
+                        else:
+                            GRB_venta[sem][i,j] = GRB_inve[sem-1][i,j] + GRB_repo[sem][i,j]
                         GRB_inve[sem][i,j]  = 0
                     elif RuidoF > 0:
                         #print(f'{i},{j},{sem},O')
@@ -697,6 +700,18 @@ def TodaslasCurvas(Mvals, Minv, F,RF,vT, SKU, Ts, STD,capacidad,scd_model,SCD0,L
     plt.show(block=False)
     fig.tight_layout()
 
+def MAPE(RF,F,SKU,Ts,Nws=13):
+    errForecast = np.zeros((len(SKU),len(Ts),Nws))
+    forecast = np.zeros((len(SKU),len(Ts),Nws))
+    Err_cum = 0
+    for sku in SKU:
+        for tienda in Ts:
+            err  = [abs(F[sku, tienda][t] - RF[sku, tienda][t])/F[sku, tienda][t] for t in range(1,Nws+1)]
+            Err_cum += np.sum(err)
+
+    return Err_cum/(len(SKU)*len(Ts)*Nws)
+
+
 '''
 *****************************************************
                     Parametros
@@ -729,7 +744,7 @@ Npeak       = 8
 tamano      = 4
 
 #trasporte
-capacidad   = 2000*0.3
+capacidad   = 2000#*0.3
 #capacidad   = np.sum(Mme) + 1500
 
 #stock conjunto maximo en tiendas
@@ -769,11 +784,11 @@ Fvol = {i:1 for i in SKU}
 t1 = time.time()
 #parametros temporales, ventana de tiempo
 vT  = 8
-STD = 0.6
-STD = 0.0
-output_vals = ModeloVariasVentanas(Nsemanas ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)       #modelo sin ruido, tamano de ventana modificable
+STD = 0.2
+#STD = 0.0
+#output_vals = ModeloVariasVentanas(Nsemanas ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)       #modelo sin ruido, tamano de ventana modificable
 #output_vals = ModeloVariasVentanas1semana(Nsemanas ,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)   #modelo sin ruido, tamano de ventana 1
-#output_vals =RuidoGRB(Nsemanas ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol, STD)                #modelo con ruido ruido gausiano, std seteable
+output_vals =RuidoGRB(Nsemanas ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol, STD)                #modelo con ruido ruido gausiano, std seteable
 
 
 Mvals, scd_model, ocupado_tiendas = obtenerCurvas(output_vals, SKU, Ts, Nsemanas, SCD0, Minv)
@@ -799,9 +814,9 @@ print('Unidades vendidas: ', CT)
                     Graficos
 *****************************************************
 '''
-RF = F
-#RF = curvaForcastRuido(output_vals['Ruido'],F,SKU,Ts) #forecast con ruido
-TodaslasCurvas(Mvals, Minv, F,RF,vT, SKU, Ts, STD,capacidad,scd_model,SCD0,Lcapacidad)
+#RF = F
+RF = curvaForcastRuido(output_vals['Ruido'],F,SKU,Ts) #forecast con ruido
+#TodaslasCurvas(Mvals, Minv, F,RF,vT, SKU, Ts, STD,capacidad,scd_model,SCD0,Lcapacidad)
 tienda = 1
 #plotOcupaTienda(Mvals,Minv,Lcapacidad,tienda)
 tienda = 2
@@ -822,3 +837,6 @@ rows,cols,weeks = qui.shape
 quiebres = rows*cols*weeks - np.sum(qui)
 
 print('N quiebres: ',quiebres)
+
+Mape = MAPE(RF,F,SKU,Ts)
+print('MAPE: ',Mape)

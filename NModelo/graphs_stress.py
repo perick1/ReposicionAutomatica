@@ -36,35 +36,48 @@ y2 = np.array([data_pulp[i,j] for i in range(len(Nskus)) for j in range(len(Ntie
 index1 = y1>0
 index2 = y2>0
 
+#z11 = np.polyfit(x1, y1, 2)
+#xp = np.linspace(0, 300000, 1000)
+#p11 = z11[0] + z11[1] * xp + z11[2]  * xp**2
+
+
 fig, axs = plt.subplots(nrows = 1, ncols = 2,figsize = (9,4))
 
 ax1,ax2 = axs.flat
 
-ax1.scatter(x1[index1],y1[index1],alpha=0.3,color = 'teal')
-ax1.set_xlabel('Número de restricciones')
+ax1.scatter(x1[index1],y1[index1],alpha=0.3,color = 'teal',label = 'Gurobi')
+#ax1.plot(xp,p11,label = 'poli3')
+ax1.set_xlabel('Número de variables')
 ax1.set_ylabel('Tiempo de ejecución [s]')
-fig.suptitle('Solver Gurobi')
-ax2.scatter(x2[index1],y1[index1],alpha=0.3,color = 'teal')
+#ax1.set_xlim(-2000,46000)
+#ax1.set_ylim(-2,44)
+#ax2.set_xlim(-3000,62000)
+#ax2.set_ylim(-2,44)
+#fig.suptitle('Solver Gurobi')
+fig.suptitle('Tiempo de ejecución de solvers')
+
+ax2.scatter(x2[index1],y1[index1],alpha=0.3,color = 'teal',label = 'Gurobi')
 ax2.set_xlabel('Número de restricciones')
 ax2.set_ylabel('Tiempo de ejecución [s]')
 #ax.set_title('')
 #fig.legend()
+'''
 plt.show(block=False)
 fig.tight_layout()
 
 fig, axs = plt.subplots(nrows = 1, ncols = 2,figsize = (9,4))
 
 ax1,ax2 = axs.flat
-
-ax1.scatter(x1[index2],y2[index2],alpha=0.3,color = 'darkorange')
+'''
+ax1.scatter(x1[index2],y2[index2],alpha=0.3,color = 'darkorange',label = 'PuLP CBC')
 ax1.set_xlabel('Número de variables')
 ax1.set_ylabel('Tiempo de ejecución [s]')
 #ax.set_title('')
-fig.suptitle('Solver PuLP CBC')
-ax2.scatter(x2[index2],y2[index2],alpha=0.3,color = 'darkorange')
+#fig.suptitle('Solver PuLP CBC')
+ax2.scatter(x2[index2],y2[index2],alpha=0.3,color = 'darkorange',label = 'PuLP CBC')
 ax2.set_xlabel('Número de restricciones')
 ax2.set_ylabel('Tiempo de ejecución [s]')
 #ax.set_title('')
-#fig.legend()
+plt.legend()
 plt.show(block=False)
 fig.tight_layout()

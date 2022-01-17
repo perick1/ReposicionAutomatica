@@ -93,11 +93,13 @@ def ModeloRepoGRB(SKU ,Ts ,T ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B  ,Fvol ,semana):
     model = Model('Repo')
     model.Params.LogToConsole = 0
     #agregar variables
+
     R   = model.addVars(comb ,vtype=GRB.INTEGER ,name='R')
     Q   = model.addVars(comb ,vtype=GRB.INTEGER ,name='Q')
     I   = model.addVars(comb ,vtype=GRB.INTEGER ,name='I')
     SCD = model.addVars(combSCD ,vtype=GRB.INTEGER ,name='SCD')
     opt = model.addVars(comb ,vtype=GRB.BINARY ,name='opt')
+
     #funcion objetivo
 
     Gz1 = 1 #precio
@@ -592,6 +594,17 @@ def ParametrosGrandes_ij(Nsku,Ntiendas):
 
     return [Mprecios, Mcostos, Mme, Mdemanda, Lcapacidad, Minv, SCD0, Fvol, SKU, Ts, capacidad]
 
+def MAPE(RF,F,SKU,Ts,Nws=13):
+    errForecast = np.zeros((len(SKU),len(Ts),Nws))
+    forecast = np.zeros((len(SKU),len(Ts),Nws))
+    Err_cum = 0
+    for sku in SKU:
+        for tienda in Ts:
+            err  = [abs(F[sku, tienda][t] - RF[sku, tienda][t])/F[sku, tienda][t] for t in range(1,Nws+1)]
+            Err_cum += np.sum(err)
+
+    return Err_cum/(len(SKU)*len(Ts)*Nws)
+
 '''
 *****************************************************
                     Parametros
@@ -606,8 +619,8 @@ vT  = 8
 Npeak       = 8
 tamano      = 4
 #stock en centro de distribucion
-Nsku        = 20#0
-Ntiendas    = 20#0
+Nsku        = 10#0
+Ntiendas    = 10#0
 Mprecios, Mcostos, Mme, Mdemanda, Lcapacidad, Minv, SCD0, Fvol, SKU, Ts,capacidad = ParametrosGrandes_ij(Nsku,Ntiendas)
 #obtengo curvas para utilizar
 P       = CurvaPrecio(Mprecios ,fracciones ,semanas)
@@ -626,11 +639,11 @@ B       = StockTiendas(Lcapacidad ,Nsemanas)
 t1 = time.time()
 #parametros temporales, ventana de tiempo
 vT  = 8
-STD = 0.5
+STD = 1.0
 #STD = 0.0
-#output_vals = ModeloVariasVentanas(Nsemanas ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)       #modelo sin ruido, tamano de ventana modificable
+output_vals = ModeloVariasVentanas(Nsemanas ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)       #modelo sin ruido, tamano de ventana modificable
 #output_vals = ModeloVariasVentanas1semana(Nsemanas ,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol)   #modelo sin ruido, tamano de ventana 1
-output_vals =RuidoGRB(Nsemanas ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol, STD)                #modelo con ruido ruido gausiano, std seteable
+#output_vals =RuidoGRB(Nsemanas ,vT,SKU ,Ts ,P ,C ,F ,SCD0 ,I0 ,Me ,Tr ,B ,Fvol, STD)                #modelo con ruido ruido gausiano, std seteable
 
 
 Mvals, scd_model, ocupado_tiendas = obtenerCurvas(output_vals, SKU, Ts, Nsemanas, SCD0, Minv)
@@ -662,3 +675,6 @@ rows,cols,weeks = qui.shape
 quiebres = rows*cols*weeks - np.sum(qui)
 
 print('N quiebres: ',quiebres)
+#RF = curvaForcastRuido(output_vals['Ruido'],F,SKU,Ts) #forecast con ruido
+#Mape = MAPE(RF,F,SKU,Ts)
+print('MAPE: ',Mape)
